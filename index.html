@@ -20,7 +20,7 @@
     <section class="intro">
       <p class="eyebrow">CANLI ARAÇ TAKİBİ</p>
       <h2>Araçları gör.<br><span>Yolda dikkatli ol.</span></h2>
-      <p class="subtext">Kamerayı aç, araç algılamayı başlat. Hız ölçümü henüz deneysel aşamada.</p>
+      <p class="subtext">Araçları algıla, kamerayı büyüt ve GPS hızını ekranda takip et. Kamera görüntüsünden araçların gerçek hızı tek başına güvenilir biçimde ölçülemez.</p>
     </section>
 
     <section class="camera-card" aria-label="Kamera görüntüsü">
@@ -34,9 +34,9 @@
           <span>İyi aydınlatılmış, sabit bir konum seç.</span>
         </div>
         <div class="scan-frame" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
-        <div class="video-overlay"><span>VK / LIVE VIEW</span><span id="clockLabel">--:--:--</span></div>
+        <div class="video-overlay"><span>VK / LIVE VIEW</span><span id="clockLabel">--:--:--</span></div><div class="speed-overlay" id="speedOverlay"><span>GPS HIZIN</span><strong id="cameraSpeed">— <small>km/sa</small></strong><span id="cameraSpeedState">GPS bekleniyor</span></div>
       </div>
-      <div class="camera-actions">
+      <div class="camera-actions"><button class="button button-secondary" id="fullscreenCamera" type="button">⛶ Tam ekran</button>
         <button class="button button-primary" id="startCamera"><span>▶</span> Algılamayı başlat</button>
         <button class="button button-secondary" id="stopCamera" disabled>Durdur</button>
       </div>
@@ -45,7 +45,7 @@
 
     <section class="stats-grid" aria-label="Analiz durumu">
       <article class="metric-card"><span class="metric-label">ALGILANAN ARAÇ</span><div class="metric-value" id="vehicleCount">0</div><span class="metric-note" id="detectionNote">Araç algılama bekleniyor</span></article>
-      <article class="metric-card"><span class="metric-label">HIZ TAHMİNİ</span><div class="metric-value">— <small>km/sa</small></div><span class="metric-note">Gerçek hız henüz ölçülmüyor</span></article>
+      <article class="metric-card"><span class="metric-label">TELEFON GPS HIZI</span><div class="metric-value" id="gpsSpeed">— <small>km/sa</small></div><span class="metric-note" id="gpsSpeedNote">Konum izni bekleniyor</span></article>
     </section>
 
     <section class="settings-card">

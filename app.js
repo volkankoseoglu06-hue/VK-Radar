@@ -12,6 +12,11 @@
   const voiceAlertToggle = document.getElementById("voiceAlertToggle");
   const alertLimit = document.getElementById("alertLimit");
   const countLabel = document.getElementById("vehicleCount");
+  const cameraSpeed = document.getElementById("cameraSpeed");
+  const cameraSpeedState = document.getElementById("cameraSpeedState");
+  const gpsSpeed = document.getElementById("gpsSpeed");
+  const gpsSpeedNote = document.getElementById("gpsSpeedNote");
+  const fullscreenButton = document.getElementById("fullscreenCamera");
   const detectionNote = document.getElementById("detectionNote");
   const canvas = document.getElementById("detectionCanvas");
   const ctx = canvas.getContext("2d");
@@ -136,22 +141,28 @@
     if (watchId !== null) {
       navigator.geolocation.clearWatch(watchId); watchId = null;
       enableLocationButton.textContent = "GPS ve hız uyarısını etkinleştir";
-      locationMessage.textContent = "GPS takibi durduruldu."; return;
+      locationMessage.textContent = "GPS takibi durduruldu."; cameraSpeedState.textContent = "GPS durduruldu"; return;
     }
     locationMessage.textContent = "Konum izni bekleniyor…";
     watchId = navigator.geolocation.watchPosition(position => {
       const speedMs = position.coords.speed;
       if (speedMs === null || !Number.isFinite(speedMs)) {
-        locationMessage.textContent = "GPS konumu alındı; cihaz henüz hız değeri sağlamıyor."; return;
+        locationMessage.textContent = "GPS konumu alındı; cihaz henüz hız değeri sağlamıyor.";
+        cameraSpeed.innerHTML = "— <small>km/sa</small>"; gpsSpeed.innerHTML = "— <small>km/sa</small>"; cameraSpeedState.textContent = "Hız alınamıyor"; gpsSpeedNote.textContent = "Cihaz GPS hızı sağlamıyor"; return;
       }
       const speed = Math.round(speedMs*3.6), limit = Number(alertLimit.value)||50;
       locationMessage.textContent = "Telefonun GPS hızı: " + speed + " km/sa.";
+      cameraSpeed.innerHTML = speed + " <small>km/sa</small>";
+      gpsSpeed.innerHTML = speed + " <small>km/sa</small>";
+      cameraSpeedState.textContent = "GPS canlı";
+      gpsSpeedNote.textContent = "GPS konumundan alınan hız";
       if (speedAlertToggle.checked && speed > limit && Date.now()-lastAlertAt > 20000) {
         lastAlertAt = Date.now(); announce("Dikkat. Hızınız " + speed + " kilometre. Ayarlanan sınır " + limit + ".");
       }
       enableLocationButton.textContent = "GPS takibini durdur";
     }, error => {
       locationMessage.textContent = error.code === 1 ? "Konum izni verilmedi; Safari ayarlarından izin ver." : "GPS alınamadı. Konum ayarlarını kontrol et.";
+      cameraSpeedState.textContent = "GPS kapalı"; gpsSpeedNote.textContent = "GPS bağlantısı kurulamadı";
       if (watchId !== null) navigator.geolocation.clearWatch(watchId);
       watchId = null; enableLocationButton.textContent = "GPS ve hız uyarısını etkinleştir";
     }, {enableHighAccuracy:true,maximumAge:1000,timeout:15000});
@@ -161,6 +172,19 @@
     clockLabel.textContent = new Intl.DateTimeFormat("tr-TR",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date());
   }
   enableLocationButton.addEventListener("click", startLocationSpeedAlert);
+  fullscreenButton.addEventListener("click", async () => {
+    try {
+      if (!document.fullscreenElement) {
+        if (stage.requestFullscreen) await stage.requestFullscreen();
+        else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen();
+        else { stage.classList.toggle("camera-expanded"); }
+      } else await document.exitFullscreen();
+    } catch (e) { stage.classList.toggle("camera-expanded"); }
+    fullscreenButton.textContent = stage.classList.contains("camera-expanded") || document.fullscreenElement ? "⤢ Küçült" : "⛶ Tam ekran";
+  });
+  document.addEventListener("fullscreenchange", () => {
+    fullscreenButton.textContent = document.fullscreenElement ? "⤢ Küçült" : "⛶ Tam ekran";
+  });
   document.querySelectorAll(".report-button").forEach(button => button.addEventListener("click", () => {
     locationMessage.textContent = button.dataset.report + " bildirimi henüz paylaşılmıyor; bu yalnızca taslaktır.";
   }));

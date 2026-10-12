@@ -19,14 +19,15 @@
 
     <section class="intro">
       <p class="eyebrow">CANLI ARAÇ TAKİBİ</p>
-      <h2>Yolu gör.<br><span>Hareketi analiz et.</span></h2>
-      <p class="subtext">Kamera görüntüsüyle araçları incelemek için güvenli bir başlangıç alanı.</p>
+      <h2>Araçları gör.<br><span>Yolda dikkatli ol.</span></h2>
+      <p class="subtext">Kamerayı aç, araç algılamayı başlat. Hız ölçümü henüz deneysel aşamada.</p>
     </section>
 
     <section class="camera-card" aria-label="Kamera görüntüsü">
       <div class="camera-heading"><span><i class="live-dot"></i> KAMERA ÖNİZLEMESİ</span><span id="cameraState">KAPALI</span></div>
       <div class="video-stage" id="videoStage">
         <video id="cameraVideo" autoplay muted playsinline></video>
+        <canvas id="detectionCanvas" aria-label="Araç algılama kutuları"></canvas>
         <div class="camera-placeholder" id="cameraPlaceholder">
           <div class="camera-icon">⌗</div>
           <strong>Kamera hazır olduğunda burada görünecek</strong>
@@ -36,15 +37,15 @@
         <div class="video-overlay"><span>VK / LIVE VIEW</span><span id="clockLabel">--:--:--</span></div>
       </div>
       <div class="camera-actions">
-        <button class="button button-primary" id="startCamera"><span>▶</span> Kamerayı aç</button>
+        <button class="button button-primary" id="startCamera"><span>▶</span> Algılamayı başlat</button>
         <button class="button button-secondary" id="stopCamera" disabled>Durdur</button>
       </div>
       <p class="hint" id="cameraMessage" role="status">Kamera erişimi için izin vermen gerekir. HTTPS bağlantısı gereklidir.</p>
     </section>
 
     <section class="stats-grid" aria-label="Analiz durumu">
-      <article class="metric-card"><span class="metric-label">ALGILANAN ARAÇ</span><div class="metric-value" id="vehicleCount">—</div><span class="metric-note">Algılama motoru henüz bağlı değil</span></article>
-      <article class="metric-card"><span class="metric-label">HIZ TAHMİNİ</span><div class="metric-value">— <small>km/sa</small></div><span class="metric-note">Kalibrasyon bekleniyor</span></article>
+      <article class="metric-card"><span class="metric-label">ALGILANAN ARAÇ</span><div class="metric-value" id="vehicleCount">0</div><span class="metric-note" id="detectionNote">Araç algılama bekleniyor</span></article>
+      <article class="metric-card"><span class="metric-label">HIZ TAHMİNİ</span><div class="metric-value">— <small>km/sa</small></div><span class="metric-note">Gerçek hız henüz ölçülmüyor</span></article>
     </section>
 
     <section class="settings-card">
@@ -82,6 +83,8 @@
 
     <footer><span>VK RADAR · ERKEN PROTOTİP</span><span>Veri cihazında kalır</span></footer>
   </main>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -1,0 +1,10 @@
+{
+  "name": "VK Radar",
+  "short_name": "VK Radar",
+  "description": "Mobil araç algılama ve hız tahmini prototipi",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#08111f",
+  "theme_color": "#08111f",
+  "lang": "tr"
+}

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#08111f">
+  <meta name="description" content="Telefon kamerasıyla araç algılama ve hız tahmini prototipi.">
+  <title>VK Radar</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand-mark" aria-hidden="true">VK<span>•</span></div>
+      <div class="brand-copy"><p class="eyebrow">MOBİL GÖRÜNTÜ ANALİZİ</p><h1>VK <span>RADAR</span></h1></div>
+      <span class="status-pill"><i></i> PROTOTİP</span>
+    </header>
+
+    <section class="intro">
+      <p class="eyebrow">CANLI ARAÇ TAKİBİ</p>
+      <h2>Yolu gör.<br><span>Hareketi analiz et.</span></h2>
+      <p class="subtext">Kamera görüntüsüyle araçları incelemek için güvenli bir başlangıç alanı.</p>
+    </section>
+
+    <section class="camera-card" aria-label="Kamera görüntüsü">
+      <div class="camera-heading"><span><i class="live-dot"></i> KAMERA ÖNİZLEMESİ</span><span id="cameraState">KAPALI</span></div>
+      <div class="video-stage" id="videoStage">
+        <video id="cameraVideo" autoplay muted playsinline></video>
+        <div class="camera-placeholder" id="cameraPlaceholder">
+          <div class="camera-icon">⌗</div>
+          <strong>Kamera hazır olduğunda burada görünecek</strong>
+          <span>İyi aydınlatılmış, sabit bir konum seç.</span>
+        </div>
+        <div class="scan-frame" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+        <div class="video-overlay"><span>VK / LIVE VIEW</span><span id="clockLabel">--:--:--</span></div>
+      </div>
+      <div class="camera-actions">
+        <button class="button button-primary" id="startCamera"><span>▶</span> Kamerayı aç</button>
+        <button class="button button-secondary" id="stopCamera" disabled>Durdur</button>
+      </div>
+      <p class="hint" id="cameraMessage" role="status">Kamera erişimi için izin vermen gerekir. HTTPS bağlantısı gereklidir.</p>
+    </section>
+
+    <section class="stats-grid" aria-label="Analiz durumu">
+      <article class="metric-card"><span class="metric-label">ALGILANAN ARAÇ</span><div class="metric-value" id="vehicleCount">—</div><span class="metric-note">Algılama motoru henüz bağlı değil</span></article>
+      <article class="metric-card"><span class="metric-label">HIZ TAHMİNİ</span><div class="metric-value">— <small>km/sa</small></div><span class="metric-note">Kalibrasyon bekleniyor</span></article>
+    </section>
+
+    <section class="settings-card">
+      <div class="section-heading"><div><p class="eyebrow">ÖLÇÜM AYARLARI</p><h3>İlk yapılandırma</h3></div><span class="step-label">ADIM 01</span></div>
+      <label class="field-label" for="speedLimit">Karşılaştırma sınırı</label>
+      <div class="input-row"><input id="speedLimit" type="number" inputmode="numeric" min="10" max="200" step="5" value="50"><span>km/sa</span></div>
+      <p class="hint">Bu sınır şimdilik yalnızca arayüz ayarıdır; hız ölçümü yapılmıyor.</p>
+      <div class="calibration-note"><span class="note-icon">i</span><p><strong>Ölçüm doğruluğu</strong><br>Gerçek hıza yaklaşmak için kamera açısı ve yoldaki bilinen bir mesafe kalibre edilmeli, sonuçlar referans ölçümle test edilmelidir.</p></div>
+    </section>
+
+    <section class="history-card">
+      <div class="section-heading"><div><p class="eyebrow">OTURUM</p><h3>Ölçüm geçmişi</h3></div><span class="step-label">0 KAYIT</span></div>
+      <div class="empty-history"><span class="empty-icon">↗</span><p>Henüz ölçüm yok</p><span>İlk sürümde veriler kaydedilmez.</span></div>
+    </section>
+
+    <footer><span>VK RADAR · ERKEN PROTOTİP</span><span>Veri cihazında kalır</span></footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

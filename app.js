@@ -1,51 +1,117 @@
-(()=>{"use strict";
-const $=id=>document.getElementById(id),STORE={bom:"vkAnaliz_bom_v1",prices:"vkAnaliz_prices_v1"};
-const dens={al6061:2.70,al7075:2.81,al2024:2.78,steel:7.85,stainless:7.93,ti64:4.43,brass:8.50,custom:2.70};
-const matNames={al6061:"Alüminyum 6061-T6",al7075:"Alüminyum 7075-T6",al2024:"Alüminyum 2024-T3",steel:"Çelik",stainless:"Paslanmaz çelik",ti64:"Titanyum Ti-6Al-4V",brass:"Pirinç",custom:"Özel malzeme"};
-const shapeNames={plate:"Plaka / Sac",bar:"Lama",round:"Yuvarlak çubuk",tube:"Boru",angle:"Köşebent",squareTube:"Kutu profil"};
-let bom=load(STORE.bom,[]),prices=load(STORE.prices,[]),shape="plate",editingId=null,timer;
-function load(k,d){try{const v=JSON.parse(localStorage.getItem(k));return Array.isArray(v)?v:d}catch{return d}}
-function save(){localStorage.setItem(STORE.bom,JSON.stringify(bom));localStorage.setItem(STORE.prices,JSON.stringify(prices))}
-function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function n(v){const x=Number(String(v??"").replace(",","."));return Number.isFinite(x)?x:0}
-function f(v,d=2){return Number(v||0).toLocaleString("tr-TR",{minimumFractionDigits:d,maximumFractionDigits:d})}
-function money(v,c="TRY"){try{return new Intl.NumberFormat("tr-TR",{style:"currency",currency:c,maximumFractionDigits:2}).format(v||0)}catch{return f(v)+" "+c}}
-function today(){return new Date().toISOString().slice(0,10)}function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
-function toast(s){const t=$("toast");t.textContent=s;t.classList.add("show");clearTimeout(timer);timer=setTimeout(()=>t.classList.remove("show"),3200)}
-function nav(v){document.querySelectorAll(".view").forEach(x=>x.classList.toggle("active",x.id==="view-"+v));document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.view===v));const m={dashboard:["GENEL BAKIŞ","Havacılık maliyet analizi","Standart parçaları, metal hammaddelerini ve BOM maliyetlerini tek yerde yönetin."],bom:["BOM ANALİZİ","BOM satırlarını analiz et","Excel kalemlerini, ağırlıkları ve fiyatları tek tabloda yönetin."],weight:["AĞIRLIK HESAPLAMA","Metal ağırlık hesaplayıcı","Geometri ve yoğunluk üzerinden teorik ağırlığı hesaplayın."],catalog:["STANDART PARÇA KATALOĞU","Havacılık standartları","Katalog araması ve tedarikçi kaynaklarına erişin."],prices:["FİYAT KÜTÜPHANESİ","Fiyat kütüphanesi","Kaynaklı tedarikçi fiyatlarını saklayın ve güncelliğini izleyin."]}[v];$("crumbText").textContent=m[0];$("pageTitle").textContent=m[1];$("pageSubtitle").textContent=m[2];if(v==="bom")renderBom();if(v==="prices")renderPrices();if(v==="dashboard")renderDash()}
-document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>nav(b.dataset.view)));document.querySelectorAll("[data-jump]").forEach(b=>b.addEventListener("click",()=>nav(b.dataset.jump)));
-function priceFor(name){let s=String(name||"").toLowerCase().trim();return prices.filter(p=>p.name.toLowerCase().trim()===s).sort((a,b)=>(b.date||"").localeCompare(a.date||""))[0]||null}
-function renderDash(){let w=bom.reduce((s,x)=>s+n(x.weight)*n(x.qty),0),c=bom.reduce((s,x)=>s+n(x.price)*n(x.qty),0);$("metricItems").textContent=bom.length;$("metricWeight").innerHTML=f(w)+" <em>kg</em>";$("metricCost").textContent=money(c);$("metricMissing").textContent=bom.filter(x=>!n(x.price)).length;let r=bom.slice(-5).reverse();$("recentTable").innerHTML=r.length?'<div class="table-scroll"><table><thead><tr><th>PARÇA / STANDART</th><th>AÇIKLAMA</th><th>AĞIRLIK</th><th>TOPLAM FİYAT</th></tr></thead><tbody>'+r.map(x=>'<tr><td><strong>'+esc(x.part||"—")+'</strong><div style="margin-top:5px"><span class="tag">'+esc(x.type||"BOM")+'</span></div></td><td>'+esc(x.desc||"—")+'</td><td class="nowrap">'+f(n(x.weight)*n(x.qty),3)+' kg</td><td class="nowrap">'+(n(x.price)?money(n(x.price)*n(x.qty),x.currency||"TRY"):'<span class="tag missing">Fiyat yok</span>')+'</td></tr>').join("")+'</tbody></table></div>':'<div class="table-placeholder"><strong>Henüz BOM kalemi yok</strong>Excel yükleyerek veya ağırlık hesaplayıcıdan kalem ekleyin.</div>'}
-function renderBom(){let q=$("bomSearch").value.toLocaleLowerCase("tr-TR").trim(),rows=bom.map((x,i)=>({...x,_i:i})).filter(x=>[x.part,x.desc,x.type].join(" ").toLocaleLowerCase("tr-TR").includes(q));$("bomCount").textContent=bom.length+" kalem";$("bomBody").innerHTML=rows.length?rows.map(x=>'<tr data-row="'+x._i+'"><td><span class="tag">'+esc(x.type||"BOM")+'</span></td><td><input class="edit-input" data-field="part" value="'+esc(x.part)+'" aria-label="Parça veya standart"></td><td><input class="edit-input" data-field="desc" value="'+esc(x.desc)+'" aria-label="Açıklama"></td><td><input class="edit-input" style="width:62px" type="number" min="0" data-field="qty" value="'+esc(x.qty??1)+'"></td><td><input class="edit-input" style="width:90px" type="number" min="0" step=".001" data-field="weight" value="'+esc(x.weight??0)+'" title="kg/adet"></td><td><input class="edit-input" style="width:100px" type="number" min="0" step=".01" data-field="price" value="'+esc(x.price??0)+'" title="fiyat/adet"></td><td class="nowrap">'+(n(x.price)?money(n(x.price)*n(x.qty),x.currency||"TRY"):'<span class="tag missing">Fiyat yok</span>')+'</td><td>'+(x.sourceUrl?'<a class="price-source" href="'+esc(x.sourceUrl)+'" target="_blank" rel="noopener">Kaynak ↗</a>':'<span class="tag missing">Kontrol et</span>')+'</td><td class="delete-cell"><button class="tiny-btn danger" data-delete="'+x._i+'">×</button></td></tr>').join(""):'<tr><td colspan="9" class="empty-row">'+(bom.length?'Aramayla eşleşen kalem yok.':'Excel içe aktarın veya kalem ekleyin.')+'</td></tr>';let w=bom.reduce((s,x)=>s+n(x.weight)*n(x.qty),0),c=bom.reduce((s,x)=>s+n(x.price)*n(x.qty),0);$("bomTotal").textContent="Genel toplam: "+money(c);$("bomFootNote").textContent="Teorik toplam ağırlık: "+f(w,3)+" kg · Fiyatsız kalemler maliyete dahil değildir."; $("bomBody").querySelectorAll("[data-field]").forEach(el=>el.addEventListener("change",()=>{let i=Number(el.closest("tr").dataset.row),k=el.dataset.field;bom[i][k]=["qty","weight","price"].includes(k)?Math.max(0,n(el.value)):el.value;save();renderBom();renderDash()}));$("bomBody").querySelectorAll("[data-delete]").forEach(el=>el.addEventListener("click",()=>{bom.splice(Number(el.dataset.delete),1);save();renderBom();renderDash();toast("BOM kalemi silindi.")}))}
-$("bomSearch").addEventListener("input",renderBom);$("addBomRow").addEventListener("click",()=>{bom.push({id:uid(),type:"Manuel",part:"",desc:"Yeni kalem",qty:1,weight:0,price:0,currency:"TRY",sourceUrl:""});save();renderBom();renderDash();toast("Kalem eklendi.")});
-function norm(s){return String(s||"").toLocaleLowerCase("tr-TR").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/g,"")}
-function val(row,keys){for(const k of keys){let hit=Object.keys(row).find(h=>norm(h)===norm(k)||norm(h).includes(norm(k)));if(hit&&row[hit]!=null&&String(row[hit]).trim()!=="")return row[hit]}return ""}
-function importRows(rows){let clean=rows.filter(r=>Object.values(r).some(v=>String(v??"").trim()));if(!clean.length){toast("Dosyada okunabilir satır yok.");return}let mapped=clean.map((r,i)=>{let part=val(r,["Part Number","Part No","Part Number / Standard","Item Number","Item","Material Number","Reference","Ref","PN","Parça No","Malzeme No","Standard"]);let desc=val(r,["Description","Part Description","Designation","Name","Material Description","Açıklama","Malzeme","Tanım","Component"]);let qty=n(val(r,["QTY","Quantity","Qty.","Miktar","Adet"]))||1,weight=n(val(r,["Weight","Unit Weight","Mass","Weight (kg)","Unit Mass","Ağırlık","Birim Ağırlık"])),price=n(val(r,["Unit Price","Price","Birim Fiyat","Fiyat","Price (TRY)"])),kind=/plate|sheet|sac|levha|profil|angle|kosebent|bar|tube/i.test(String(part)+" "+String(desc))?"Metal/Standart":"BOM";let p=priceFor(String(part||""));return{id:uid(),type:kind,part:String(part||val(r,["Tool No","Tool Number","ID","No","Kalem"])||"SATIR-"+(i+1)),desc:String(desc||""),qty,weight,price,currency:"TRY",sourceUrl:p?.url||"",original:r}});let replace=confirm("Dosyada "+mapped.length+" satır bulundu.\n\nTamam: mevcut listeyi değiştir.\nİptal: yeni satırları listeye ekle.");bom=replace?mapped:bom.concat(mapped);save();renderBom();renderDash();nav("bom");toast(mapped.length+" satır içe aktarıldı. Sütunları kontrol edin.")}
-async function handleFile(file){if(!file)return;try{if(!window.XLSX)throw Error("Excel okuma kütüphanesi yüklenemedi; internet bağlantısını kontrol edin.");let wb=XLSX.read(await file.arrayBuffer(),{type:"array",cellDates:false}),name=wb.SheetNames.find(s=>/recapitul|bom|material|part|list/i.test(s))||wb.SheetNames[0],ws=wb.Sheets[name],rows=XLSX.utils.sheet_to_json(ws,{defval:"",raw:false});if(!rows.length){let grid=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:false}),hi=grid.findIndex(r=>r.filter(v=>String(v).trim()).length>=2);if(hi>=0){let heads=grid[hi].map((v,i)=>String(v||"Column "+(i+1)));rows=grid.slice(hi+1).map(r=>Object.fromEntries(heads.map((h,i)=>[h,r[i]??""])))}}if(!rows.length){toast("Tablo bulunamadı; Excel'de farklı sayfa deneyin.");return}importRows(rows)}catch(e){toast("Excel okunamadı: "+e.message)}$("bomFile").value="";$("hiddenImport").value=""}
-$("bomFile").addEventListener("change",e=>handleFile(e.target.files[0]));$("hiddenImport").addEventListener("change",e=>handleFile(e.target.files[0]));$("quickImport").addEventListener("click",()=>$("hiddenImport").click());
-$("exportBom").addEventListener("click",()=>{if(!window.XLSX){toast("Excel kütüphanesi yüklenemedi.");return}let d=bom.map((x,i)=>({"Kalem":i+1,"Parça No / Standart":x.part,"Açıklama":x.desc,"Tip":x.type,"Adet":x.qty,"Birim Ağırlık (kg)":x.weight,"Toplam Ağırlık (kg)":n(x.weight)*n(x.qty),"Birim Fiyat":x.price,"Para Birimi":x.currency||"TRY","Toplam Fiyat":n(x.price)*n(x.qty),"Fiyat Kaynağı":x.sourceUrl||""})),ws=XLSX.utils.json_to_sheet(d),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"VK Analiz BOM");XLSX.writeFile(wb,"VK-Analiz-BOM-"+today()+".xlsx")});
-const fields={plate:[["length","Uzunluk (mm)",250],["width","Genişlik (mm)",100],["thickness","Kalınlık (mm)",10]],bar:[["length","Uzunluk (mm)",1000],["width","Genişlik (mm)",40],["thickness","Kalınlık / yükseklik (mm)",10]],round:[["length","Uzunluk (mm)",1000],["diameter","Çap (mm)",20]],tube:[["length","Uzunluk (mm)",1000],["outer","Dış çap (mm)",30],["wall","Et kalınlığı (mm)",2]],angle:[["length","Uzunluk (mm)",1000],["legA","Kol A (mm)",40],["legB","Kol B (mm)",40],["thickness","Et kalınlığı (mm)",4]],squareTube:[["length","Uzunluk (mm)",1000],["sideA","Dış genişlik A (mm)",40],["sideB","Dış yükseklik B (mm)",40],["wall","Et kalınlığı (mm)",3]]};
-let dims={length:250,width:100,thickness:10,diameter:20,outer:30,wall:2,legA:40,legB:40,sideA:40,sideB:40};
-function setShape(s){shape=s;document.querySelectorAll("[data-shape]").forEach(b=>b.classList.toggle("selected",b.dataset.shape===shape));document.querySelectorAll(".profile-tab[data-shape]").forEach(b=>b.classList.toggle("selected",b.dataset.shape===shape));$("dimensionFields").innerHTML='<div class="dimension-title">ÖLÇÜLER · mm</div><div class="form-row">'+fields[shape].map(([k,label])=>'<div><label class="form-label" for="dim_'+k+'">'+label+'</label><input type="number" id="dim_'+k+'" min="0" step=".1" value="'+dims[k]+'" required></div>').join("")+'</div>';$("dimensionFields").querySelectorAll("input").forEach(el=>el.addEventListener("input",()=>{dims[el.id.slice(4)]=n(el.value);calculate()}));calculate()}
-document.querySelectorAll("[data-shape]").forEach(b=>b.addEventListener("click",()=>setShape(b.dataset.shape)));document.querySelectorAll(".profile-tab[data-shape]").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".profile-tab[data-shape]").forEach(x=>x.classList.toggle("selected",x===b));setShape(b.dataset.shape)}));$("material").addEventListener("change",()=>{if($("material").value!=="custom")$("density").value=dens[$("material").value];calculate()});$("density").addEventListener("input",calculate);$("quantity").addEventListener("input",calculate);$("partLabel").addEventListener("input",calculate);$("unitPrice").addEventListener("input",()=>{$("unitPrice").dataset.manual="1";calculate()});$("qtyMinus").addEventListener("click",()=>{$("quantity").value=Math.max(1,n($("quantity").value)-1);calculate()});$("qtyPlus").addEventListener("click",()=>{$("quantity").value=Math.max(1,n($("quantity").value)+1);calculate()});$("clearCalculations").addEventListener("click",()=>{if(confirm("BOM listesindeki tüm kalemleri silmek istiyor musunuz?")){bom=[];save();renderBom();renderDash();toast("BOM kalemleri temizlendi.")}});$("saveCalculation").addEventListener("click",()=>{calculate();toast("Sonuç güncellendi. BOM'a eklemek için Hesapla ve BOM'a ekle düğmesini kullanın.")});
-function volume(){let d=Object.fromEntries(Object.entries(dims).map(([k,v])=>[k,n($("dim_"+k)?.value??v)]));if(!fields[shape].every(([k])=>d[k]>0))return 0;if(shape==="plate"||shape==="bar")return d.length*d.width*d.thickness;if(shape==="round")return Math.PI*(d.diameter/2)**2*d.length;if(shape==="tube")return d.outer>2*d.wall?Math.PI*((d.outer/2)**2-(d.outer/2-d.wall)**2)*d.length:0;if(shape==="angle")return d.thickness<=Math.min(d.legA,d.legB)?(d.legA*d.thickness+d.legB*d.thickness-d.thickness**2)*d.length:0;if(shape==="squareTube")return 2*d.wall<Math.min(d.sideA,d.sideB)?(d.sideA*d.sideB-(d.sideA-2*d.wall)*(d.sideB-2*d.wall))*d.length:0;return 0}
-function calculate(){let vol=volume(),density=Math.max(0,n($("density").value)),qty=Math.max(1,n($("quantity").value)||1),kg=vol*density/1e6,total=kg*qty;$("weightKg").innerHTML=f(kg,3)+' <small>kg</small>';$("volumeCm").textContent=f(vol/1000)+" cm³";$("resultQty").textContent=f(qty,0);$("totalWeight").innerHTML=f(total,3)+' <small>kg</small>';let materialKey=$("material").value,materialName=materialKey==="custom"?"Özel malzeme":matNames[materialKey];$("materialName").textContent=materialName;$("resultMaterial").textContent=materialName;$("resultDensity").textContent="Yoğunluk: "+f(density,2)+" g/cm³";let name=$("partLabel").value||(materialName+" "+shapeNames[shape]),p=priceFor(name)||priceFor(materialName),priceInput=$("unitPrice");if(p&&p.unit==="kg"&&p.currency==="USD"&&priceInput.dataset.manual!=="1")priceInput.value=n(p.price);let unitPrice=Math.max(0,n(priceInput.value));$("kgPrice").textContent=priceInput.value!==""?money(unitPrice,"USD")+" / kg":(p?"Kayıt: "+money(n(p.price),p.currency)+" / "+p.unit:"—");$("weightCost").textContent=priceInput.value!==""?money(total*unitPrice,"USD"):"—";return{vol,kg,total,name,p,unitPrice}}
-$("resetWeight").addEventListener("click",()=>{dims={length:250,width:100,thickness:10,diameter:20,outer:30,wall:2,legA:40,legB:40,sideA:40,sideB:40};$("quantity").value=1;$("partLabel").value="";$("unitPrice").value="";$("unitPrice").dataset.manual="";$("material").value="al6061";$("density").value=2.70;setShape("plate")});
-$("saveWeight").addEventListener("click",()=>{let r=calculate();if(r.kg<=0){toast("Ölçüleri kontrol edin; ağırlık hesaplanamadı.");return}let q=Math.max(1,n($("quantity").value)||1),part=$("partLabel").value||shapeNames[shape]+" / "+matNames[$("material").value];bom.push({id:uid(),type:shapeNames[shape],part,desc:matNames[$("material").value]+" · "+fields[shape].map(([k,l])=>l.split(" (")[0]+": "+$("dim_"+k).value+" mm").join(" / "),qty:q,weight:r.kg,price:r.unitPrice,currency:"USD",sourceUrl:""});save();renderBom();renderDash();toast("Parça BOM'a eklendi.");nav("bom")});
-let priceFilter="raw";function renderPrices(){let q=$("priceSearch").value.toLocaleLowerCase("tr-TR").trim(),list=prices.filter(p=>(priceFilter==="all"||((p.category||"raw")===priceFilter))&&[p.name,p.supplier,p.notes].join(" ").toLocaleLowerCase("tr-TR").includes(q));$("priceBody").innerHTML=list.map(p=>{let stale=!p.date||(Date.now()-new Date(p.date+"T00:00:00").getTime()>30*86400000);return'<tr><td><strong>'+esc(p.name)+'</strong><div style="margin-top:5px"><span class="tag">'+esc((p.category||"raw")==="standard"?"Standart ürün":"Ham malzeme")+'</span> <span class="tag">'+esc(p.notes||"Malzeme")+'</span></div></td><td>'+esc(p.supplier)+'</td><td class="nowrap"><strong>'+money(n(p.price),p.currency)+'</strong></td><td>'+esc(p.unit)+'</td><td><span class="tag '+(p.type==="Tahmini fiyat"?"missing":"")+'">'+esc(p.type)+'</span></td><td class="nowrap">'+esc(p.date||"—")+(stale?' <span class="tag missing">Eski</span>':"")+'</td><td class="price-source">'+(p.url?'<a href="'+esc(p.url)+'" target="_blank" rel="noopener">Kaynağı aç ↗</a>':'<span class="tag missing">URL yok</span>')+'</td><td><button class="tiny-btn" data-edit-price="'+p.id+'">Düzenle</button> <button class="tiny-btn danger" data-delete-price="'+p.id+'">×</button></td></tr>'}).join("");$("priceEmpty").style.display=list.length?"none":"block";$("priceCount").textContent=prices.length;$("supplierCount").textContent=new Set(prices.map(p=>p.supplier.toLowerCase())).size;$("staleCount").textContent=prices.filter(p=>!p.date||(Date.now()-new Date(p.date+"T00:00:00").getTime()>30*86400000)).length;$("priceBody").querySelectorAll("[data-delete-price]").forEach(b=>b.addEventListener("click",()=>{if(confirm("Bu fiyat kaydını silmek istiyor musunuz?")){prices=prices.filter(p=>p.id!==b.dataset.deletePrice);save();renderPrices();toast("Fiyat kaydı silindi.")}}));$("priceBody").querySelectorAll("[data-edit-price]").forEach(b=>b.addEventListener("click",()=>openPrice(prices.find(p=>p.id===b.dataset.editPrice))))}
-$("priceSearch").addEventListener("input",renderPrices);
-function openPrice(p=null,category=null){editingId=p?.id||null;$("priceDialogTitle").textContent=p?"Fiyat kaydını düzenle":"Yeni fiyat kaydı";$("pName").value=p?.name||"";$("pSupplier").value=p?.supplier||"";$("pPrice").value=p?.price??"";$("pCategory").value=p?.category||(category||(priceFilter==="standard"?"standard":"raw"));$("pCurrency").value=p?.currency||"USD";$("pUnit").value=p?.unit||($("pCategory").value==="raw"?"kg":"adet");$("pType").value=p?.type||($("pCategory").value==="raw"?"Hammadde liste fiyatı":"Web liste fiyatı");$("pDate").value=p?.date||today();$("pUrl").value=p?.url||"";$("pNotes").value=p?.notes||"";$("priceDialog").showModal()}
-$("closePrice").addEventListener("click",()=>$("priceDialog").close());$("cancelPrice").addEventListener("click",()=>$("priceDialog").close());$("priceForm").addEventListener("submit",e=>{e.preventDefault();let p={id:editingId||uid(),name:$("pName").value.trim(),supplier:$("pSupplier").value.trim(),price:n($("pPrice").value),category:$("pCategory").value,currency:$("pCurrency").value,unit:$("pUnit").value,type:$("pType").value,date:$("pDate").value||today(),url:$("pUrl").value.trim(),notes:$("pNotes").value.trim()};if(!p.name||!p.supplier||p.price<0){toast("Zorunlu alanları kontrol edin.");return}let i=prices.findIndex(x=>x.id===p.id);if(i>=0)prices[i]=p;else prices.push(p);save();$("priceDialog").close();renderPrices();renderDash();toast("Fiyat kaydı saklandı.")});
-$("priceWebSearch").addEventListener("click",()=>{let q=$("priceSearch").value.trim()||prompt("Hangi malzeme veya ürünü arayalım?","Alüminyum 7075-T6 kg fiyatı USD");if(q)window.open("https://www.google.com/search?q="+encodeURIComponent(q+" price USD supplier"),"_blank","noopener")});
-document.querySelectorAll("[data-price-filter]").forEach(b=>b.addEventListener("click",()=>{priceFilter=b.dataset.priceFilter;document.querySelectorAll("[data-price-filter]").forEach(x=>x.classList.toggle("active",x===b));$("standardSearchPanel").hidden=priceFilter!=="standard";$("newPrice").textContent=priceFilter==="standard"?"+ Standart ürün ekle":"+ Fiyat kaydı ekle";renderPrices()}));
-$("newStandardPrice").addEventListener("click",()=>openPrice(null,"standard"));
-document.querySelectorAll("[data-standard-site]").forEach(b=>b.addEventListener("click",()=>{let q=$("standardProductQuery").value.trim();if(!q){toast("Önce parça kodu veya standart numarası girin.");$("standardProductQuery").focus();return}let site=b.dataset.standardSite,prefix=site==="carrlane"?"site:carrlane.com ":site==="mcmaster"?"site:mcmaster.com ":site==="misumi"?"site:us.misumi-ec.com OR site:misumi-ec.com ":"";window.open("https://www.google.com/search?q="+encodeURIComponent(prefix+q+" price"),"_blank","noopener")}));
-$("standardProductQuery").addEventListener("keydown",e=>{if(e.key==="Enter")document.querySelector('[data-standard-site="web"]').click()});
-$("newPrice").addEventListener("click",()=>openPrice(null,priceFilter));
-function catalogSearch(site){let q=$("catalogSearch").value.trim()||prompt("Aramak istediğin standart veya parça kodu?","Carr Lane locating pin");if(!q)return;let suffix=site==="carrlane"?"site:carrlane.com ":site==="mcmaster"?"site:mcmaster.com ":site==="metals"?" fiyat Türkiye metal tedarikçi Avas Metal Seykoç":" ISO DIN NAS MS aviation standard part";window.open("https://www.google.com/search?q="+encodeURIComponent(suffix+q),"_blank","noopener")}
-document.querySelectorAll(".external-search").forEach(b=>b.addEventListener("click",()=>catalogSearch(b.dataset.site)));$("searchCatalog").addEventListener("click",()=>catalogSearch("web"));$("catalogSearch").addEventListener("keydown",e=>{if(e.key==="Enter")catalogSearch("web")});
-if(!bom.length){bom=[{id:uid(),type:"Metal/Standart",part:"PLATE 6061-T6",desc:"250 × 100 × 10 mm · örnek geometri",qty:1,weight:.675,price:0,currency:"TRY",sourceUrl:""},{id:uid(),type:"Standart",part:"Carr Lane locating pin",desc:"Ürün numarası ve ölçüsü doğrulanmalı",qty:4,weight:0,price:0,currency:"TRY",sourceUrl:"https://www.carrlane.com/"},{id:uid(),type:"Metal/Standart",part:"ANGLE 40×40×4",desc:"Teorik kesit alanı · uzunluk 1000 mm",qty:2,weight:2.3872,price:0,currency:"TRY",sourceUrl:""}];save()}
-renderDash();renderBom();renderPrices();setShape("squareTube");
-})();
-document.querySelectorAll("[data-material-quick]").forEach(b=>b.addEventListener("click",()=>{let key=b.dataset.materialQuick;$("material").value=key;$("density").value=dens[key];document.querySelectorAll("[data-material-quick]").forEach(x=>x.classList.toggle("active",x===b));calculate();toast("Malzeme seçildi: "+matNames[key])}));
-document.querySelectorAll("[data-shape-jump]").forEach(b=>b.addEventListener("click",()=>{nav("weight");setShape(b.dataset.shapeJump)}));
+const $ = (id) => document.getElementById(id);
+const storageKey = "vkAnalizCleanData";
+const titles = {
+  standards: { eyebrow: "PARÇA ARAŞTIRMA", title: "Standart Parça Kataloğu", description: "Standart numarasını veya parça adını ara. Arama, seçtiğin üretici sitesinde açılır." },
+  materials: { eyebrow: "MALZEME YÖNETİMİ", title: "Malzeme Fiyatları", description: "Ham malzeme fiyatlarını USD/kg birimiyle kaydet. Kayıtlar bu tarayıcıda saklanır." },
+  weight: { eyebrow: "TEKNİK HESAPLAMA", title: "Ağırlık Hesaplama", description: "Dikdörtgen prizma, silindir veya plaka için teorik ağırlık hesabı yap." },
+  bom: { eyebrow: "PARÇA LİSTESİ", title: "BOM Analizi", description: "Excel dosyanı seçerek içeriğini önizle. Bu ilk sürümde dosya sunucuya yüklenmez." }
+};
+let currentView = "home";
+let records = loadRecords();
+
+function loadRecords() {
+  try { return JSON.parse(localStorage.getItem(storageKey) || '{"materials":[],"recent":[]}'); }
+  catch { return { materials: [], recent: [] }; }
+}
+function saveRecords() { localStorage.setItem(storageKey, JSON.stringify(records)); }
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+function addRecent(label, view) {
+  records.recent = [{ label, view, date: new Date().toLocaleDateString("tr-TR") }, ...records.recent.filter(x => x.label !== label)].slice(0, 5);
+  saveRecords(); renderRecent();
+}
+function renderRecent() {
+  $("recentCount").textContent = records.recent.length + " kayıt";
+  const root = $("recentList");
+  if (!records.recent.length) {
+    root.className = "recent-empty";
+    root.innerHTML = '<span class="empty-icon">↗</span><span><strong>Henüz kayıt yok</strong><small>Çalışmaların burada listelenecek.</small></span>';
+    return;
+  }
+  root.className = "recent-list";
+  root.innerHTML = records.recent.map(r => '<button class="recent-row" data-recent-view="'+escapeHtml(r.view)+'"><span class="empty-icon">↗</span><span><strong>'+escapeHtml(r.label)+'</strong><small>'+escapeHtml(r.date)+'</small></span><b>→</b></button>').join("");
+  root.querySelectorAll("[data-recent-view]").forEach(b => b.addEventListener("click", () => openView(b.dataset.recentView)));
+}
+function openView(view) {
+  currentView = view;
+  $("home").classList.add("hidden");
+  $("workspace").classList.remove("hidden");
+  const meta = titles[view];
+  $("viewEyebrow").textContent = meta.eyebrow;
+  $("viewTitle").textContent = meta.title;
+  $("viewDescription").textContent = meta.description;
+  const root = $("viewContent");
+  if (view === "standards") renderStandards(root);
+  if (view === "materials") renderMaterials(root);
+  if (view === "weight") renderWeight(root);
+  if (view === "bom") renderBom(root);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function goHome() {
+  currentView = "home";
+  $("workspace").classList.add("hidden");
+  $("home").classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+document.querySelectorAll("[data-view]").forEach(button => button.addEventListener("click", () => openView(button.dataset.view)));
+$("backHome").addEventListener("click", goHome);
+
+function renderStandards(root) {
+  root.innerHTML = '<div class="notice">Bu araç ürün fiyatlarını otomatik olarak içeri aktardığını iddia etmez. Arama, ilgili tedarikçi sitesinde yeni sekmede açılır; bulduğun ürün bilgisini ayrıca kaydedebilirsin.</div><form id="standardForm" class="simple-form"><div class="field"><label for="standardQuery">Standart numarası veya parça adı</label><input id="standardQuery" placeholder="Örn. NAS, ISO 4762, MS21042" required></div><div class="field"><label for="standardSupplier">Arama kaynağı</label><select id="standardSupplier"><option value="carrlane.com">Carr Lane</option><option value="mcmaster.com">McMaster-Carr</option><option value="misumi-ec.com">MISUMI</option><option value="google">Genel web araması</option></select></div><div class="form-actions"><button class="primary-button" type="submit">Kaynakta ara ↗</button><button class="secondary-button" id="saveStandard" type="button">Araştırma kaydı ekle</button></div></form><div id="standardFeedback"></div>';
+  $("standardForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const q = $("standardQuery").value.trim(), source = $("standardSupplier").value;
+    const url = source === "google" ? "https://www.google.com/search?q=" + encodeURIComponent(q + " aviation standard part") : "https://www.google.com/search?q=" + encodeURIComponent("site:" + source + " " + q);
+    window.open(url, "_blank", "noopener,noreferrer");
+    addRecent("Parça araması: " + q, "standards");
+  });
+  $("saveStandard").addEventListener("click", () => {
+    const q = $("standardQuery").value.trim();
+    if (!q) { $("standardQuery").focus(); return; }
+    addRecent("Parça araştırması: " + q, "standards");
+    $("standardFeedback").innerHTML = '<p class="notice">Araştırma son çalışmalar listesine eklendi.</p>';
+  });
+}
+function renderMaterials(root) {
+  root.innerHTML = '<form id="materialForm" class="simple-form"><div class="field"><label for="materialName">Malzeme tanımı</label><input id="materialName" placeholder="Örn. Alüminyum 7075-T6" required></div><div class="field"><label for="materialPrice">Fiyat (USD/kg)</label><input id="materialPrice" type="number" min="0" step="0.0001" placeholder="0.00" required></div><div class="field"><label for="materialSupplier">Tedarikçi</label><input id="materialSupplier" placeholder="Firma adı"></div><div class="field"><label for="materialSource">Kaynak bağlantısı</label><input id="materialSource" type="url" placeholder="https://..."></div><div class="form-actions"><button class="primary-button" type="submit">Fiyatı kaydet</button></div></form><div class="table-wrap" id="materialsTable"></div>';
+  renderMaterialsTable();
+  $("materialForm").addEventListener("submit", e => {
+    e.preventDefault();
+    records.materials.unshift({ id: Date.now(), name: $("materialName").value.trim(), price: Number($("materialPrice").value), supplier: $("materialSupplier").value.trim(), source: $("materialSource").value.trim(), date: new Date().toLocaleDateString("tr-TR") });
+    saveRecords(); renderMaterialsTable(); addRecent("Malzeme fiyatı: " + records.materials[0].name, "materials"); e.target.reset();
+  });
+}
+function renderMaterialsTable() {
+  const root = $("materialsTable");
+  if (!root) return;
+  if (!records.materials.length) { root.innerHTML = '<div class="empty-table">Henüz malzeme fiyatı kaydedilmedi.</div>'; return; }
+  root.innerHTML = '<table><thead><tr><th>Malzeme</th><th>Fiyat</th><th>Tedarikçi</th><th>Tarih</th><th></th></tr></thead><tbody>'+records.materials.map(m => '<tr><td>'+escapeHtml(m.name)+'</td><td>$'+Number(m.price).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:4})+' / kg</td><td>'+escapeHtml(m.supplier || "—")+'</td><td>'+escapeHtml(m.date)+'</td><td><button class="secondary-button" data-delete-material="'+m.id+'">Sil</button> '+(m.source?'<a href="'+escapeHtml(m.source)+'" target="_blank" rel="noopener noreferrer">Kaynak ↗</a>':"")+'</td></tr>').join("")+'</tbody></table>';
+  root.querySelectorAll("[data-delete-material]").forEach(b => b.addEventListener("click", () => { records.materials = records.materials.filter(m => m.id !== Number(b.dataset.deleteMaterial)); saveRecords(); renderMaterialsTable(); }));
+}
+function renderWeight(root) {
+  root.innerHTML = '<div class="notice">Hesaplanan değer teoriktir. Malzeme yoğunluğu kg/m³ olarak girilir. Delikler, pahlar ve gerçek geometri ayrıca hesaba katılmaz.</div><form id="weightForm" class="simple-form"><div class="field"><label for="shape">Geometri</label><select id="shape"><option value="box">Dikdörtgen prizma / blok</option><option value="cylinder">Silindir</option><option value="plate">Plaka</option></select></div><div class="field"><label for="density">Yoğunluk (kg/m³)</label><input id="density" type="number" min="1" value="2810" required></div><div class="field"><label for="length">Uzunluk (mm)</label><input id="length" type="number" min="0.01" value="100" required></div><div class="field" id="widthField"><label for="width">Genişlik (mm)</label><input id="width" type="number" min="0.01" value="50" required></div><div class="field" id="heightField"><label for="height">Yükseklik / kalınlık (mm)</label><input id="height" type="number" min="0.01" value="10" required></div><div class="field hidden" id="diameterField"><label for="diameter">Çap (mm)</label><input id="diameter" type="number" min="0.01" value="50"></div><div class="form-actions"><button class="primary-button" type="submit">Ağırlığı hesapla</button></div></form><div id="weightResult"></div>';
+  $("shape").addEventListener("change", () => { const cylinder = $("shape").value === "cylinder"; $("widthField").classList.toggle("hidden", cylinder); $("diameterField").classList.toggle("hidden", !cylinder); });
+  $("weightForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const l = Number($("length").value)/1000, d = Number($("density").value);
+    const volume = $("shape").value === "cylinder" ? Math.PI*Math.pow(Number($("diameter").value)/2000,2)*l : l*(Number($("width").value)/1000)*(Number($("height").value)/1000);
+    const kg = volume*d;
+    $("weightResult").innerHTML = '<div class="result-card"><small>TEORİK AĞIRLIK</small><strong>'+kg.toLocaleString("tr-TR",{maximumFractionDigits:4})+' kg</strong><small>Hacim: '+(volume*1e9).toLocaleString("tr-TR",{maximumFractionDigits:2})+' mm³</small></div>';
+    addRecent("Ağırlık hesabı: "+kg.toLocaleString("tr-TR",{maximumFractionDigits:3})+" kg", "weight");
+  });
+}
+function renderBom(root) {
+  root.innerHTML = '<div class="notice">Dosya yalnızca tarayıcında okunur; sunucuya gönderilmez. CSV dosyaları doğrudan önizlenebilir. XLSX dosyaları için bu sürümde Excel ayrıştırma kütüphanesi eklenmediğinden CSV olarak dışa aktarman gerekebilir.</div><div class="field"><label for="bomFile">BOM dosyası seç (CSV veya TXT)</label><input id="bomFile" type="file" accept=".csv,.txt"></div><div id="bomPreview" class="table-wrap"></div>';
+  $("bomFile").addEventListener("change", async e => {
+    const file = e.target.files[0]; if (!file) return;
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).filter(x => x.trim()).slice(0,101);
+    if (!lines.length) return;
+    const delimiter = lines[0].includes(";") ? ";" : lines[0].includes("\t") ? "\t" : ",";
+    const rows = lines.map(line => line.split(delimiter));
+    $("bomPreview").innerHTML = '<p class="notice">'+escapeHtml(file.name)+' · '+Math.max(0,rows.length-1)+' satır önizleme (en fazla 100 satır)</p><table><tbody>'+rows.map((row,i) => '<tr>'+row.slice(0,12).map(cell => i===0?'<th>'+escapeHtml(cell)+'</th>':'<td>'+escapeHtml(cell)+'</td>').join("")+'</tr>').join("")+'</tbody></table>';
+    addRecent("BOM önizleme: "+file.name, "bom");
+  });
+}
+renderRecent();

@@ -29,3 +29,6 @@ footer{display:flex;justify-content:space-between;gap:16px;padding:25px 3px 0;co
 .dimension-heading{font-size:15px;margin:22px 0 12px}.weight-layout{align-items:start}
 @media(max-width:900px){.shape-picker{grid-template-columns:repeat(4,minmax(0,1fr))}.shape-tile{min-height:112px}}
 @media(max-width:600px){.shape-picker-wrap{padding:14px}.shape-picker{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.shape-tile{min-height:100px;font-size:10px}.shape-symbol{font-size:40px;min-width:42px;height:42px}.shape-picker-head h3{font-size:16px}}
+
+/* Toleranslandirma araci */
+.tolerance-section{padding:20px 0;border-bottom:1px solid #e8edf1}.tolerance-section:last-child{border-bottom:0}.tolerance-section h3{font-size:16px;color:#20384d;margin:0 0 12px}.tolerance-section .table-wrap{margin-top:12px}.tolerance-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 14px;max-width:950px}.tolerance-result{margin-top:12px;padding:16px;border-radius:10px;background:#f2f7fa;color:#173e5d;font-size:14px}.tolerance-result strong{font-size:22px}.tolerance-result-grid{margin-top:16px}.tolerance-result-grid .result-card{padding:14px}@media(max-width:700px){.tolerance-form-grid{grid-template-columns:1fr}.tolerance-result-grid{grid-template-columns:1fr}}

@@ -21,20 +21,7 @@ const CATALOG_SEED = [
 {code:"PM-26-28-18.00",name:"Press-fit metric bushing · ID 18 / OD 26 / L 28 mm",brand:"Carr Lane",price:"",currency:"USD",image:"assets/press-fit-bushing.svg",url:"https://www.carrlane.com/",verifiedPrice:false},
 {code:"FESTO-CATALOG",name:"Festo resmi katalog bağlantısı · ürün kodu ile arama",brand:"Festo",price:"",currency:"EUR",image:"assets/festo-catalog.svg",url:"https://www.festo.com/",verifiedPrice:false}
 ];
-const CATALOG_SEED=[
-{code:"PM-18-12-12.00",name:"Press-fit metric bushing · ID 12 / OD 18 / L 12 mm",brand:"Carr Lane",price:11.60,currency:"USD",image:"assets/press-fit-bushing.svg",url:"https://www.carrlane.com/product/drill-bushings/press-fit-bushings/press-fit-bushings-metric-pm/pm-18-12-1200",updated:"2026-10-14",verifiedPrice:true},
-{code:"PM-18-20-12.00",name:"Press-fit metric bushing · ID 12 / OD 18 / L 20 mm",brand:"Carr Lane",price:12.29,currency:"USD",image:"assets/press-fit-bushing.svg",url:"https://www.carrlane.com/product/drill-bushings/press-fit-bushings/press-fit-bushings-metric-pm/pm-18-20-1200",updated:"2026-10-14",verifiedPrice:true},
-{code:"PM-18-25-12.00",name:"Press-fit metric bushing · ID 12 / OD 18 / L 25 mm",brand:"Carr Lane",price:"",currency:"USD",image:"assets/press-fit-bushing.svg",url:"https://www.carrlane.com/",verifiedPrice:false},
-{code:"PM-15-12-10.00",name:"Press-fit metric bushing · ID 10 / OD 15 / L 12 mm",brand:"Carr Lane",price:"",currency:"USD",image:"assets/press-fit-bushing.svg",url:"https://www.carrlane.com/",verifiedPrice:false},
-{code:"PM-15-20-10.00",name:"Press-fit metric bushing · ID 10 / OD 15 / L 20 mm",brand:"Carr Lane",price:"",currency:"USD",image:"assets/press-fit-bushing.svg",url:"https://www.carrlane.com/",verifiedPrice:false},
-{code:"PM-15-25-10.00",name:"Press-fit metric bushing · ID 10 / OD 15 / L 25 mm",brand:"Carr Lane",price:"",currency:"USD",image:"assets/press-fit-bushing.svg",url:"https://www.carrlane.com/",verifiedPrice:false},
-{code:"PM-22-16-15.00",name:"Press-fit metric bushing · ID 15 / OD 22 / L 16 mm",brand:"Carr Lane",price:"",currency:"USD",image:"assets/press-fit-bushing.svg",url:"https://www.carrlane.com/",verifiedPrice:false},
-{code:"PM-22-28-15.00",name:"Press-fit metric bushing · ID 15 / OD 22 / L 28 mm",brand:"Carr Lane",price:"",currency:"USD",image:"assets/press-fit-bushing.svg",url:"https://www.carrlane.com/",verifiedPrice:false},
-{code:"PM-22-36-15.00",name:"Press-fit metric bushing · ID 15 / OD 22 / L 36 mm",brand:"Carr Lane",price:"",currency:"USD",image:"assets/press-fit-bushing.svg",url:"https://www.carrlane.com/",verifiedPrice:false},
-{code:"PM-26-16-18.00",name:"Press-fit metric bushing · ID 18 / OD 26 / L 16 mm",brand:"Carr Lane",price:"",currency:"USD",image:"assets/press-fit-bushing.svg",url:"https://www.carrlane.com/",verifiedPrice:false},
-{code:"PM-26-28-18.00",name:"Press-fit metric bushing · ID 18 / OD 26 / L 28 mm",brand:"Carr Lane",price:"",currency:"USD",image:"assets/press-fit-bushing.svg",url:"https://www.carrlane.com/",verifiedPrice:false},
-{code:"FESTO-CATALOG",name:"Festo resmi ürün kataloğu",brand:"Festo",price:"",currency:"EUR",image:"assets/festo-catalog.svg",url:"https://www.festo.com/",verifiedPrice:false}
-];
+
 const META = {
  standards:{eyebrow:"PARÇA ARAŞTIRMA",title:"Standart Parça Kataloğu",description:"Parça numarasını veya kodunu yaz. Ürün bilgisi ve görseli ekleyebilir, resmi üretici kaynaklarında arama yapabilirsin."},
  materials:{eyebrow:"MALZEME YÖNETİMİ",title:"Ham Malzeme Fiyatları",description:"Yoğunluk ve USD/kg fiyatlarını bir kez kaydet; istediğin zaman düzenle."},
@@ -42,7 +29,7 @@ const META = {
  bom:{eyebrow:"PARÇA LİSTESİ",title:"BOM Analizi",description:"CSV/TXT parça listeni önizle. XLSX için sonraki aşamada Excel ayrıştırma desteği eklenecek."}
 };
 let data = load();
-function load(){try{const d=JSON.parse(localStorage.getItem(STORE)||"{}"); if(!Array.isArray(d.materials)||!d.materials.length)d.materials=SEED.map((m,i)=>({...m,id:i+1})); if(!Array.isArray(d.products))d.products=[];if(!d.catalogSeeded){d.products=[...CATALOG_SEED.map((p,i)=>({...p,id:900000+i,seed:true})),...d.products];d.catalogSeeded=true;}if(!d.catalogSeeded){d.products=[...CATALOG_SEED.map((p,i)=>({...p,id:900000+i,seed:true})),...d.products];d.catalogSeeded=true;}if(!Array.isArray(d.recent))d.recent=[];return d;}catch{return {materials:SEED.map((m,i)=>({...m,id:i+1})),products:[],recent:[]};}}
+function load(){try{const d=JSON.parse(localStorage.getItem(STORE)||"{}"); if(!Array.isArray(d.materials)||!d.materials.length)d.materials=SEED.map((m,i)=>({...m,id:i+1})); if(!Array.isArray(d.products))d.products=[];if(!d.catalogSeeded){d.products=[...CATALOG_SEED.map((p,i)=>({...p,id:900000+i,seed:true})),...d.products];d.catalogSeeded=true;}if(!Array.isArray(d.recent))d.recent=[];return d;}catch{return {materials:SEED.map((m,i)=>({...m,id:i+1})),products:[],recent:[]};}}
 function persist(){localStorage.setItem(STORE,JSON.stringify(data));}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function fmt(v,n=3){return Number(v).toLocaleString("tr-TR",{maximumFractionDigits:n});}

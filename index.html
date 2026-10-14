@@ -1,90 +1,41 @@
 <!doctype html>
 <html lang="tr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#08111f">
-  <meta name="description" content="Telefon kamerasıyla araç algılama ve hız tahmini prototipi.">
-  <title>VK Radar</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101a2a">
+<meta name="description" content="VK Analiz - Havacılık malzeme, standart parça, ağırlık ve fiyat analizi">
+<title>VK Analiz | Havacılık Malzeme Analizi</title><link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-  <main class="app-shell">
-    <header class="topbar">
-      <div class="brand-mark" aria-hidden="true">VK<span>•</span></div>
-      <div class="brand-copy"><p class="eyebrow">MOBİL GÖRÜNTÜ ANALİZİ</p><h1>VK <span>RADAR</span></h1></div>
-      <span class="status-pill"><i></i> PROTOTİP</span>
-    </header>
-
-    <section class="intro">
-      <p class="eyebrow">CANLI ARAÇ TAKİBİ</p>
-      <h2>Araçları gör.<br><span>Yolda dikkatli ol.</span></h2>
-      <p class="subtext">Araçları algıla, kamerayı büyüt ve GPS hızını ekranda takip et. Kamera görüntüsünden araçların gerçek hızı tek başına güvenilir biçimde ölçülemez.</p>
-    </section>
-
-    <section class="camera-card" aria-label="Kamera görüntüsü">
-      <div class="camera-heading"><span><i class="live-dot"></i> KAMERA ÖNİZLEMESİ</span><span id="cameraState">KAPALI</span></div>
-      <div class="video-stage" id="videoStage">
-        <video id="cameraVideo" autoplay muted playsinline></video>
-        <canvas id="detectionCanvas" aria-label="Araç algılama kutuları"></canvas>
-        <div class="camera-placeholder" id="cameraPlaceholder">
-          <div class="camera-icon">⌗</div>
-          <strong>Kamera hazır olduğunda burada görünecek</strong>
-          <span>İyi aydınlatılmış, sabit bir konum seç.</span>
-        </div>
-        <div class="scan-frame" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
-        <div class="video-overlay"><span>VK / LIVE VIEW</span><span id="clockLabel">--:--:--</span></div><div class="speed-overlay" id="speedOverlay"><span>GPS HIZIN</span><strong id="cameraSpeed">— <small>km/sa</small></strong><span id="cameraSpeedState">GPS bekleniyor</span></div>
-      </div>
-      <div class="camera-actions"><button class="button button-secondary" id="fullscreenCamera" type="button">⛶ Tam ekran</button>
-        <button class="button button-primary" id="startCamera"><span>▶</span> Algılamayı başlat</button>
-        <button class="button button-secondary" id="stopCamera" disabled>Durdur</button>
-      </div>
-      <p class="hint" id="cameraMessage" role="status">Kamera erişimi için izin vermen gerekir. HTTPS bağlantısı gereklidir.</p>
-    </section>
-
-    <section class="stats-grid" aria-label="Analiz durumu">
-      <article class="metric-card"><span class="metric-label">ALGILANAN ARAÇ</span><div class="metric-value" id="vehicleCount">0</div><span class="metric-note" id="detectionNote">Araç algılama bekleniyor</span></article>
-      <article class="metric-card"><span class="metric-label">TELEFON GPS HIZI</span><div class="metric-value" id="gpsSpeed">— <small>km/sa</small></div><span class="metric-note" id="gpsSpeedNote">Konum izni bekleniyor</span></article>
-    </section>
-
-    <section class="settings-card">
-      <div class="section-heading"><div><p class="eyebrow">ÖLÇÜM AYARLARI</p><h3>İlk yapılandırma</h3></div><span class="step-label">ADIM 01</span></div>
-      <label class="field-label" for="speedLimit">Karşılaştırma sınırı</label>
-      <div class="input-row"><input id="speedLimit" type="number" inputmode="numeric" min="10" max="200" step="5" value="50"><span>km/sa</span></div>
-      <p class="hint">Bu sınır şimdilik yalnızca arayüz ayarıdır; hız ölçümü yapılmıyor.</p>
-      <div class="calibration-note"><span class="note-icon">i</span><p><strong>Ölçüm doğruluğu</strong><br>Gerçek hıza yaklaşmak için kamera açısı ve yoldaki bilinen bir mesafe kalibre edilmeli, sonuçlar referans ölçümle test edilmelidir.</p></div>
-    </section>
-
-    <section class="alerts-card">
-      <div class="section-heading"><div><p class="eyebrow">YOL GÜVENLİĞİ</p><h3>Uyarılar ve dikkat noktaları</h3></div><span class="step-label">BETA</span></div>
-      <p class="subtext alert-intro">Hız sınırına uymayı hatırlatan sesli uyarılar ve yoldaki risk bildirimleri. Sürüşe başlamadan ayarla.</p>
-      <div class="alert-controls">
-        <label class="toggle-row"><span><strong>Hız sınırı hatırlatıcısı</strong><small>GPS hızı seçtiğin sınırı aşınca uyarır</small></span><input type="checkbox" id="speedAlertToggle" checked><i></i></label>
-        <label class="toggle-row"><span><strong>Sesli uyarı</strong><small>Ekrana bakmadan kısa uyarı al</small></span><input type="checkbox" id="voiceAlertToggle" checked><i></i></label>
-      </div>
-      <div class="input-row limit-row"><label for="alertLimit">Uyarı eşiği</label><input id="alertLimit" type="number" inputmode="numeric" min="10" max="200" step="5" value="50"><span>km/sa</span></div>
-      <button class="button button-secondary full-button" id="enableLocation">GPS ve hız uyarısını etkinleştir</button>
-      <p class="hint" id="locationMessage" role="status">GPS izni gerekiyor. Bu özellik, konum hızını kullanır; radar konumlarını henüz göstermez.</p>
-      <div class="report-title">Yol bildirimi taslağı</div>
-      <div class="report-grid">
-        <button class="report-button" data-report="Sabit radar"><span>◉</span>Sabit radar</button>
-        <button class="report-button" data-report="Mobil hız denetimi"><span>⌁</span>Mobil hız denetimi</button>
-        <button class="report-button" data-report="Polis / yol kontrolü"><span>✳</span>Polis / yol kontrolü</button>
-        <button class="report-button" data-report="Kaza / tehlike"><span>⚠</span>Kaza / tehlike</button>
-      </div>
-      <p class="hint">Bunlar şimdilik yerel arayüz seçenekleridir; gönderilen topluluk bildirimi veya doğrulanmış radar haritası değildir.</p>
-    </section>
-
-    <section class="history-card">
-      <div class="section-heading"><div><p class="eyebrow">OTURUM</p><h3>Ölçüm geçmişi</h3></div><span class="step-label">0 KAYIT</span></div>
-      <div class="empty-history"><span class="empty-icon">↗</span><p>Henüz ölçüm yok</p><span>İlk sürümde veriler kaydedilmez.</span></div>
-    </section>
-
-    <footer><span>VK RADAR · ERKEN PROTOTİP</span><span>Veri cihazında kalır</span></footer>
-  </main>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
-  <script src="app.js"></script>
-</body>
-</html>
+<div class="layout">
+<aside class="sidebar"><div class="brand"><div class="brand-symbol">VK<span>•</span></div><div><strong>VK ANALİZ</strong><small>AVIATION COST INTELLIGENCE</small></div></div>
+<div class="nav-label">ÇALIŞMA ALANI</div>
+<button class="nav-item active" data-view="dashboard"><span>▦</span> Genel Bakış</button><button class="nav-item" data-view="bom"><span>▤</span> BOM / Excel Analizi</button><button class="nav-item" data-view="weight"><span>◈</span> Ağırlık Hesaplama</button><button class="nav-item" data-view="catalog"><span>⌕</span> Standart Parça Kataloğu</button><button class="nav-item" data-view="prices"><span>₺</span> Fiyat Kütüphanesi</button>
+<div class="sidebar-bottom"><div class="status-dot"></div><div><strong>Yerel prototip</strong><small>Veriler bu tarayıcıda saklanır</small></div></div></aside>
+<main class="main"><header class="topbar"><div><div class="crumb">MALZEME MÜHENDİSLİĞİ <span>/</span> <b id="crumbText">GENEL BAKIŞ</b></div><h1 id="pageTitle">Havacılık maliyet analizi</h1><p class="page-subtitle" id="pageSubtitle">Standart parçaları, metal hammaddelerini ve BOM maliyetlerini tek yerde yönetin.</p></div><div class="top-actions"><span class="desktop-pill"><i></i> MASAÜSTÜ ÇALIŞMA ALANI</span><button class="btn btn-primary" id="quickImport">↑ Excel içe aktar</button></div></header>
+<section class="view active" id="view-dashboard">
+<div class="hero"><div><div class="eyebrow">VK ANALİZ · ERKEN SÜRÜM</div><h2>Projeden maliyete.<br><span>Kalem kalem netlik.</span></h2><p>COJI ve diğer havacılık montaj ekipmanları için standart elemanları, metal ölçülerini, teorik ağırlığı ve kaynaklı birim fiyatları bir araya getirin.</p><button class="btn btn-light" data-jump="bom">BOM analizi başlat <span>→</span></button></div><div class="hero-art" aria-hidden="true"><div class="orbit"></div><div class="orbit orbit-two"></div><div class="blueprint"><div class="bp-top">ASSEMBLY / COJI</div><div class="bp-cross"></div><div class="bp-part part-a"></div><div class="bp-part part-b"></div><div class="bp-part part-c"></div><div class="bp-dim dim-a">250 mm</div><div class="bp-dim dim-b">Ø 20</div><div class="bp-foot">VK / ENGINEERING ANALYSIS</div></div></div></div>
+<div class="metrics"><article class="metric"><div class="metric-top"><span>İÇE AKTARILAN KALEM</span><span class="metric-icon">▤</span></div><strong id="metricItems">0</strong><small>Aktif BOM satırı</small></article><article class="metric"><div class="metric-top"><span>TOPLAM HESAPLANAN AĞIRLIK</span><span class="metric-icon">◈</span></div><strong id="metricWeight">0,00 <em>kg</em></strong><small>Ölçüsü hesaplanabilen kalemler</small></article><article class="metric"><div class="metric-top"><span>TOPLAM TAHMİNİ MALİYET</span><span class="metric-icon">₺</span></div><strong id="metricCost">₺0,00</strong><small>Kaydedilmiş birim fiyatlara göre</small></article><article class="metric"><div class="metric-top"><span>FİYAT BEKLEYEN KALEM</span><span class="metric-icon warning">!</span></div><strong id="metricMissing">0</strong><small>Teklif veya kaynak kontrolü gerekli</small></article></div>
+<div class="content-grid"><section class="panel recent-panel"><div class="panel-heading"><div><span class="section-kicker">PROJE ÇALIŞMA ALANI</span><h3>Son BOM kalemleri</h3></div><button class="text-button" data-jump="bom">Tüm kalemler →</button></div><div id="recentTable"></div></section><section class="panel shortcut-panel"><div class="panel-heading"><div><span class="section-kicker">HIZLI İŞLEMLER</span><h3>Nereden başlayalım?</h3></div></div><button class="shortcut" data-jump="bom"><span class="shortcut-icon">▤</span><span><strong>Excel BOM yükle</strong><small>Malzeme satırlarını içe aktar, kalem kalem incele.</small></span><b>→</b></button><button class="shortcut" data-jump="weight"><span class="shortcut-icon">◈</span><span><strong>Metal ağırlığı hesapla</strong><small>Plaka, lama, yuvarlak, boru veya profil seç.</small></span><b>→</b></button><button class="shortcut" data-jump="catalog"><span class="shortcut-icon">⌕</span><span><strong>Standart parça ara</strong><small>Carr Lane ve diğer kataloglara hızlı eriş.</small></span><b>→</b></button><div class="notice"><span>i</span><p><strong>Fiyat güvenilirliği</strong><br>Her fiyatı tedarikçi, para birimi, tarih ve bağlantısıyla kaydedin. Kaynaksız değerler gerçek piyasa fiyatı kabul edilmez.</p></div></section></div>
+</section>
+<section class="view" id="view-bom"><div class="section-banner"><div><span class="section-kicker">01 / EXCEL İÇE AKTARMA</span><h2>BOM satırlarını analiz et</h2><p>.xlsx, .xls veya .csv dosyanı ekle. Satırları düzenle, ağırlık ve fiyat bilgilerini tamamla, Excel'e geri aktar.</p></div><label class="btn btn-primary file-button">Dosya seç <input type="file" id="bomFile" accept=".xlsx,.xls,.csv"></label></div>
+<div class="panel toolbar-panel"><div class="searchbox"><span>⌕</span><input id="bomSearch" placeholder="Parça numarası, açıklama veya standart ara..."></div><div class="toolbar-right"><span id="bomCount" class="muted-label">0 kalem</span><button class="btn btn-secondary" id="addBomRow">+ Kalem ekle</button><button class="btn btn-primary" id="exportBom">↓ Excel'e aktar</button></div></div>
+<div class="panel table-panel"><div class="table-scroll"><table><thead><tr><th>TİP</th><th>PARÇA / STANDART</th><th>AÇIKLAMA</th><th>QTY</th><th>AĞIRLIK / ADET</th><th>BİRİM FİYAT</th><th>TOPLAM</th><th>KAYNAK</th><th></th></tr></thead><tbody id="bomBody"></tbody></table></div><div class="table-foot"><span id="bomFootNote">Veri girişi bekleniyor.</span><strong id="bomTotal">Genel toplam: ₺0,00</strong></div></div><p class="footnote">İpucu: Excel başlıkları otomatik eşleştirilmeye çalışılır. Eşleşmeyen alanları kontrol edin.</p></section>
+<section class="view" id="view-weight"><div class="section-banner"><div><span class="section-kicker">02 / GEOMETRİK HESAPLAMA</span><h2>Metal ağırlık hesaplayıcı</h2><p>Malzemeyi, standardı ve ölçüleri gir; teorik ağırlığı hesapla. Fiyat kaydı varsa tahmini bedeli göster.</p></div></div><div class="weight-layout"><section class="panel form-panel"><div class="panel-heading"><div><span class="section-kicker">PARÇA TANIMI</span><h3>Geometri ve malzeme</h3></div><span class="pill">TEORİK HESAP</span></div>
+<label class="form-label">Geometri tipi</label><div class="shape-grid"><button class="shape-option selected" data-shape="plate"><span class="shape-sketch plate-sketch"></span><b>Plaka / Sac</b></button><button class="shape-option" data-shape="bar"><span class="shape-sketch bar-sketch"></span><b>Lama</b></button><button class="shape-option" data-shape="round"><span class="shape-sketch round-sketch"></span><b>Yuvarlak çubuk</b></button><button class="shape-option" data-shape="tube"><span class="shape-sketch tube-sketch"></span><b>Boru</b></button><button class="shape-option" data-shape="angle"><span class="shape-sketch angle-sketch"></span><b>Köşebent</b></button><button class="shape-option" data-shape="squareTube"><span class="shape-sketch square-sketch"></span><b>Kutu profil</b></button></div>
+<div class="form-row"><div><label class="form-label" for="material">Malzeme</label><select id="material"><option value="al6061">Alüminyum 6061-T6 · 2.70 g/cm³</option><option value="al7075">Alüminyum 7075-T6 · 2.81 g/cm³</option><option value="al2024">Alüminyum 2024-T3 · 2.78 g/cm³</option><option value="steel">Çelik · 7.85 g/cm³</option><option value="stainless">Paslanmaz çelik · 7.93 g/cm³</option><option value="ti64">Titanyum Ti-6Al-4V · 4.43 g/cm³</option><option value="brass">Pirinç · 8.50 g/cm³</option><option value="custom">Özel yoğunluk</option></select></div><div><label class="form-label" for="density">Yoğunluk (g/cm³)</label><input type="number" id="density" value="2.70" min="0.01" step="0.01"></div></div><div id="dimensionFields" class="dimension-fields"></div>
+<div class="form-row"><div><label class="form-label" for="quantity">Adet</label><input type="number" id="quantity" min="1" value="1" step="1"></div><div><label class="form-label" for="partLabel">Parça adı / no</label><input id="partLabel" placeholder="Örn. PLATE-01"></div></div><div class="form-actions"><button class="btn btn-secondary" id="resetWeight">Sıfırla</button><button class="btn btn-primary" id="saveWeight">BOM'a kalem ekle</button></div></section>
+<section class="panel result-panel"><span class="section-kicker">HESAPLAMA SONUCU</span><h3>Teorik ağırlık</h3><div class="weight-number" id="weightKg">0,000 <small>kg</small></div><div class="result-divider"></div><div class="result-line"><span>Tek parça hacmi</span><strong id="volumeCm">0,00 cm³</strong></div><div class="result-line"><span>Toplam adet</span><strong id="resultQty">1</strong></div><div class="result-line"><span>Toplam ağırlık</span><strong id="totalWeight">0,000 kg</strong></div><div class="result-line"><span>Kaydedilen fiyat</span><strong id="kgPrice">Bulunamadı</strong></div><div class="result-line total-line"><span>Hesaplanan malzeme bedeli</span><strong id="weightCost">—</strong></div><div class="result-caveat"><span>!</span><p>Teorik hesap; köşe radyüsleri, toleranslar, delikler, talaş kaldırma ve kesim firesi dahil değildir. Profil kesitlerini katalog verileriyle doğrulayın.</p></div></section></div></section>
+<section class="view" id="view-catalog"><div class="section-banner"><div><span class="section-kicker">03 / HAVACILIK STANDARTLARI</span><h2>Standart parça kataloğu</h2><p>CATIA tasarımında kullanılan bağlantı elemanlarını ve fikstür standartlarını aramak için katalog bağlantıları. Aramalar yeni sekmede açılır.</p></div></div><div class="panel catalog-search-panel"><div class="searchbox large"><span>⌕</span><input id="catalogSearch" placeholder="Örn. Carr Lane clamp, DIN 912, ISO 7380, NAS bolt..."></div><button class="btn btn-primary" id="searchCatalog">Kataloglarda ara ↗</button></div>
+<div class="catalog-grid"><article class="catalog-card"><div class="catalog-visual"><div class="cl-mark">CL<span>®</span></div><div class="catalog-lines"><i></i><i></i><i></i><i></i></div></div><div class="catalog-body"><span class="catalog-type">FİKSTÜR / TAKIM STANDARDI</span><h3>Carr Lane Manufacturing</h3><p>Clamps, locating components, jig & fixture components ve takım elemanları.</p><button class="text-button external-search" data-site="carrlane">Carr Lane içinde ara ↗</button><a href="https://www.carrlane.com/" target="_blank" rel="noopener">Resmi katalog ↗</a></div></article>
+<article class="catalog-card"><div class="catalog-visual"><div class="bolt-icon">⌁</div><div class="catalog-lines"><i></i><i></i><i></i><i></i></div></div><div class="catalog-body"><span class="catalog-type">CİVATA / SOMUN / PUL</span><h3>McMaster-Carr</h3><p>Standart bağlantı elemanları, malzemeler, teknik çizimler ve referanslar.</p><button class="text-button external-search" data-site="mcmaster">McMaster içinde ara ↗</button><a href="https://www.mcmaster.com/" target="_blank" rel="noopener">Resmi katalog ↗</a></div></article>
+<article class="catalog-card"><div class="catalog-visual"><div class="std-mark">ISO<span>/</span>DIN</div><div class="catalog-lines"><i></i><i></i><i></i><i></i></div></div><div class="catalog-body"><span class="catalog-type">ISO / DIN / NAS / MS</span><h3>Standart arama</h3><p>Standart numarası, üretici kodu veya teknik tanımla web üzerinde arama.</p><button class="text-button external-search" data-site="web">Genel standart ara ↗</button><a href="https://www.iso.org/standards.html" target="_blank" rel="noopener">ISO standartları ↗</a></div></article>
+<article class="catalog-card"><div class="catalog-visual"><div class="metal-mark">Al<span>·</span>Ti<span>·</span>Steel</div><div class="catalog-lines"><i></i><i></i><i></i><i></i></div></div><div class="catalog-body"><span class="catalog-type">TÜRKİYE / METAL TEDARİKÇİSİ</span><h3>Metal fiyat kaynakları</h3><p>Levha, lama, çubuk ve profil fiyatlarını yerli satıcıların sayfalarında karşılaştır.</p><button class="text-button external-search" data-site="metals">Türkiye'de metal ara ↗</button><div class="source-links"><a href="https://www.avasmetal.com/" target="_blank" rel="noopener">Avas Metal ↗</a><a href="https://www.seykoc.com.tr/" target="_blank" rel="noopener">Seykoç ↗</a></div></div></article></div><div class="notice wide-notice"><span>i</span><p><strong>Önemli not</strong><br>Arama sonucu görülmesi ürünün uygunluğu, stokta olması veya Türkiye teslim fiyatı olduğu anlamına gelmez. Teknik tanım ve fiyat kaynağı ayrı doğrulanmalıdır.</p></div></section>
+<section class="view" id="view-prices"><div class="section-banner"><div><span class="section-kicker">04 / FİYAT TAKİBİ</span><h2>Fiyat kütüphanesi</h2><p>Standart parça ve hammadde fiyatlarını kaynağıyla sakla. Güncelleme tarihi ve fiyat türü görünür kalır.</p></div><button class="btn btn-primary" id="newPrice">+ Fiyat kaydı ekle</button></div>
+<div class="metrics compact-metrics"><article class="metric"><div class="metric-top"><span>KAYITLI FİYAT</span><span class="metric-icon">₺</span></div><strong id="priceCount">0</strong><small>Fiyat kütüphanesindeki kayıt</small></article><article class="metric"><div class="metric-top"><span>TEDARİKÇİ / KAYNAK</span><span class="metric-icon">↗</span></div><strong id="supplierCount">0</strong><small>Farklı kaynak sayısı</small></article><article class="metric"><div class="metric-top"><span>GÜNCELLENMESİ GEREKEN</span><span class="metric-icon warning">!</span></div><strong id="staleCount">0</strong><small>30 günden eski kayıt</small></article></div>
+<div class="panel toolbar-panel"><div class="searchbox"><span>⌕</span><input id="priceSearch" placeholder="Parça, malzeme veya tedarikçi ara..."></div><button class="btn btn-secondary" id="priceWebSearch">Web'de fiyat ara ↗</button></div>
+<div class="panel table-panel"><div class="table-scroll"><table><thead><tr><th>PARÇA / MALZEME</th><th>TEDARİKÇİ</th><th>FİYAT</th><th>BİRİM</th><th>FİYAT TÜRÜ</th><th>GÜNCELLEME</th><th>KAYNAK</th><th></th></tr></thead><tbody id="priceBody"></tbody></table></div><div class="empty-state" id="priceEmpty">Henüz fiyat kaydı yok. İlk kaydı ekleyebilir veya katalogdan fiyat arayabilirsin.</div></div><div class="notice wide-notice"><span>↻</span><p><strong>Canlı fiyat hedefi</strong><br>Bu prototip otomatik fiyat çekmez. Sürekli güncelleme için kaynakların kullanım koşullarına uygun API/CSV beslemesi veya zamanlanmış sunucu entegrasyonu gerekir.</p></div></section>
+<footer class="footer"><span>VK ANALİZ · HAVACILIK MALZEME VE MALİYET ANALİZİ</span><span>PROTOTİP 0.1</span></footer></main></div>
+<dialog id="priceDialog" class="dialog"><form id="priceForm" method="dialog"><div class="dialog-head"><div><span class="section-kicker">FİYAT KÜTÜPHANESİ</span><h3 id="priceDialogTitle">Yeni fiyat kaydı</h3></div><button class="close-btn" type="button" id="closePrice">×</button></div><label class="form-label" for="pName">Parça / malzeme adı *</label><input id="pName" required placeholder="Örn. Alüminyum 7075-T6 levha 10 mm"><div class="form-row"><div><label class="form-label" for="pSupplier">Tedarikçi *</label><input id="pSupplier" required placeholder="Örn. Avas Metal"></div><div><label class="form-label" for="pPrice">Birim fiyat *</label><input id="pPrice" required type="number" min="0" step="0.0001"></div></div><div class="form-row"><div><label class="form-label" for="pCurrency">Para birimi</label><select id="pCurrency"><option>TRY</option><option>EUR</option><option>USD</option></select></div><div><label class="form-label" for="pUnit">Fiyat birimi</label><select id="pUnit"><option value="kg">kg başına</option><option value="adet">adet başına</option><option value="m">metre başına</option><option value="levha">levha başına</option><option value="boy">boy başına</option><option value="set">set başına</option></select></div></div><div class="form-row"><div><label class="form-label" for="pType">Fiyat türü</label><select id="pType"><option>Web liste fiyatı</option><option>Teklif fiyatı</option><option>Tahmini fiyat</option><option>Geçmiş satın alma</option></select></div><div><label class="form-label" for="pDate">Kontrol tarihi</label><input type="date" id="pDate"></div></div><label class="form-label" for="pUrl">Ürün / kaynak URL'si</label><input id="pUrl" type="url" placeholder="https://..."><label class="form-label" for="pNotes">Notlar / ölçü / malzeme kalitesi</label><textarea id="pNotes" rows="2" placeholder="Kalite, kalınlık, teslimat, KDV durumu..."></textarea><div class="dialog-actions"><button class="btn btn-secondary" type="button" id="cancelPrice">Vazgeç</button><button class="btn btn-primary" id="savePrice" type="submit">Kaydet</button></div></form></dialog>
+<input type="file" id="hiddenImport" accept=".xlsx,.xls,.csv" hidden><div class="toast" id="toast" role="status"></div><script src="app.js"></script>
+</body></html>

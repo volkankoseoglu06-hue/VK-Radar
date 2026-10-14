@@ -81,7 +81,7 @@ function renderWeight(root){
  const shapeNames=Object.fromEntries(shapes.map(s=>[s[0],s[1]]));
  const material=()=>data.materials.find(m=>m.id===Number($("materialSelect").value))||data.materials[0];
  const ibeam=["HEA","HP","HD","HL","IPN","HE","IPE"],ubeam=["u","UPE","UPN"];
- function fields(){const s=currentShape;$("widthField").classList.toggle("hidden",["pipe","round","hex"].includes(s));$("heightField").classList.toggle("hidden",["pipe","round","hex","plate","flat"].includes(s));$("thicknessField").classList.toggle("hidden",["square","round","hex"].includes(s));$("webField").classList.toggle("hidden",!ibeam.includes(s));$("diameterField").classList.toggle("hidden",!["pipe","round"].includes(s));$("innerDiameterField").classList.toggle("hidden",s!=="pipe");$("flatsField").classList.toggle("hidden",s!=="hex");$("drawingCaption").textContent=shapeNames[s];draw();}
+ function fields(){const s=currentShape;$("widthField").classList.toggle("hidden",["pipe","round","hex"].includes(s));$("heightField").classList.toggle("hidden",["pipe","round","hex","plate","flat"].includes(s));$("thicknessField").classList.toggle("hidden",["square","round","hex"].includes(s));$("webField").classList.toggle("hidden",!(ibeam.includes(s)||s==="t"));$("diameterField").classList.toggle("hidden",!["pipe","round"].includes(s));$("innerDiameterField").classList.toggle("hidden",s!=="pipe");$("flatsField").classList.toggle("hidden",s!=="hex");$("drawingCaption").textContent=shapeNames[s];draw();}
  function draw(){const s=currentShape;const svgMap={
  box:'<svg viewBox="0 0 240 150"><rect x="67" y="25" width="106" height="100" fill="#e9f0f6" stroke="#2678a9" stroke-width="4"/><rect x="83" y="41" width="74" height="68" fill="white" stroke="#2678a9" stroke-width="3"/></svg>',
  plate:'<svg viewBox="0 0 240 150"><path d="M28 53 157 25 211 49 81 78Z" fill="#d9e8f3" stroke="#2678a9" stroke-width="2"/><path d="M81 78 211 49V65L81 95Z" fill="#8eb4cf" stroke="#2678a9" stroke-width="2"/><path d="M28 53 81 78V95L28 69Z" fill="#b5d0e2" stroke="#2678a9" stroke-width="2"/></svg>',
@@ -104,7 +104,8 @@ function renderWeight(root){
  else if(currentShape==="round")area=Math.PI/4*D*D;
  else if(currentShape==="hex")area=Math.sqrt(3)/2*S*S;
  else if(currentShape==="square")area=B*H;
- else if(currentShape==="angle"||currentShape==="t")area=B*t+(H-t)*t;
+ else if(currentShape==="angle")area=B*t+(H-t)*t;
+ else if(currentShape==="t")area=B*t+Math.max(0,H-t)*tw;
  else if(ubeam.includes(currentShape))area=B*t+2*Math.max(0,H-t)*t;
  else if(ibeam.includes(currentShape))area=2*B*t+Math.max(0,H-2*t)*tw;
  if(!Number.isFinite(area)||area<=0||!Number.isFinite(L)||L<=0||!Number.isFinite(density)||density<=0||!Number.isFinite(qty)||qty<1){alert("Ölçüleri kontrol et.");return;}

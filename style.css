@@ -64,3 +64,31 @@
 @media(max-width:1120px){.engineering-calculator{grid-template-columns:minmax(180px,.7fr) minmax(300px,1fr)}.engineering-results{grid-column:2}.drawing-panel{grid-row:1 / span 2}.profile-toolbar{border-radius:20px}}
 @media(max-width:760px){.engineering-calculator{grid-template-columns:1fr;gap:15px}.drawing-panel{grid-row:auto}.engineering-results{grid-column:auto}.technical-drawing{height:220px}.profile-toolbar{border-radius:18px}.engineering-form{padding:18px}}
 @media(max-width:420px){.engineering-form .dimension-fields .form-row{grid-template-columns:1fr}.engineering-form-title h3{font-size:18px}.profile-tab{min-width:70px}}
+
+/* Public-facing engineering website layout */
+:root{color-scheme:light;--bg:#f5f7fa;--panel:#ffffff;--line:#e1e7ed;--muted:#6e7e8f;--text:#1c2a39;--cyan:#278fdb;--amber:#e8a32b;--green:#258b4a}
+body{background:#f5f7fa;color:#1e2c3a;font-family:Arial,"Segoe UI",sans-serif;font-size:14px}
+.site-topline{background:#172b3e;color:#d5e1ec;font-size:11px}
+.site-topline-inner{max-width:1480px;margin:0 auto;padding:9px 28px;display:flex;justify-content:space-between;gap:15px}
+.layout{display:block;min-height:100vh}
+.sidebar{position:relative;top:auto;height:auto;min-height:0;padding:17px clamp(16px,3vw,44px);display:flex;flex-direction:row;align-items:center;gap:24px;background:#fff;border:0;border-bottom:1px solid #e4e9ef;box-shadow:0 3px 12px #12283a08}
+.brand{flex:none;padding:0;gap:10px}.brand-symbol{width:43px;height:43px;border-radius:10px;background:#ed2b2b;border:0;color:#fff}.brand-symbol span{color:#fff}.brand strong{color:#1d3043;font-size:16px}.brand small{color:#718194;font-size:8px;letter-spacing:.7px}
+.nav-label{display:none}.sidebar .nav-item{margin:0;padding:10px 11px;border-radius:7px;color:#4e6072;white-space:nowrap;font-size:12px}.sidebar .nav-item span{color:#e52a2a}.sidebar .nav-item:hover{background:#fff1f1;color:#cf2227}.sidebar .nav-item.active{background:#ef2b2b;border-color:#ef2b2b;color:#fff}.sidebar .nav-item.active span{color:#fff}.sidebar-bottom{display:none}
+.main{max-width:1480px;margin:0 auto;padding:28px clamp(16px,3vw,42px) 35px}
+.topbar{padding:0 0 20px;margin-bottom:23px;border-bottom:1px solid #e2e8ef;align-items:center}.crumb{color:#7b8997}.crumb b{color:#e52b2b}.topbar h1{color:#1c2e40;font-size:29px;letter-spacing:-.7px}.page-subtitle{color:#6b7b8c}.desktop-pill{background:#fff;color:#516477;border:1px solid #dfe6ed}.desktop-pill i{background:#259b54}.panel,.metric,.catalog-card{background:#fff;border-color:#e0e7ee;box-shadow:0 5px 20px #1b344908}
+.view{animation:websiteFade .18s ease-out}@keyframes websiteFade{from{opacity:.72;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+.section-banner h2{color:#1c2e40}.section-banner p{color:#6c7b8a}
+#view-weight .engineering-banner{padding:0 0 18px;border-bottom:1px solid #e1e7ed}
+.profile-toolbar{border-radius:9px;padding:7px;background:#ed2b2b;gap:3px}
+.profile-tab{border-radius:6px;font-size:11px;min-width:68px;flex-basis:68px}
+.profile-tab:hover,.profile-tab.selected{background:#c91f24;border-color:#ff8585}
+.engineering-calculator{grid-template-columns:minmax(200px,.78fr) minmax(320px,1.05fr) minmax(275px,.9fr);gap:20px}
+.drawing-panel{background:#fff;border:1px solid #e4eaf0;border-radius:12px;padding:17px 12px;box-shadow:0 4px 18px #1b344906}
+.drawing-heading{padding:0 6px}.technical-drawing{height:260px}.drawing-tip{margin-top:22px}
+.engineering-form{border-radius:12px;padding:22px;background:#ef2b2b}
+.engineering-results{border-radius:12px;box-shadow:0 5px 18px #c21f2515}
+.engineering-form .form-actions .btn{border-radius:5px}.engineering-results .result-actions .btn{border-radius:5px}
+#view-weight .engineering-banner .section-kicker{color:#e52b2b}
+.footer{border-top:1px solid #e0e7ed;color:#7c8b99}
+@media(max-width:1120px){.sidebar{flex-wrap:wrap;gap:13px}.brand{margin-right:auto}.sidebar .nav-item{padding:9px}.engineering-calculator{grid-template-columns:minmax(190px,.75fr) minmax(300px,1fr)}}
+@media(max-width:760px){.site-topline-inner{padding:8px 15px}.site-topline-inner span:last-child{display:none}.sidebar{padding:13px 15px;gap:8px}.brand{width:100%;padding-bottom:8px}.sidebar .nav-item{flex:1 0 auto;justify-content:center;font-size:11px}.main{padding:20px 14px}.topbar h1{font-size:24px}.topbar{align-items:flex-start;gap:14px}.top-actions{flex-wrap:wrap}.engineering-calculator{grid-template-columns:1fr}.drawing-panel{order:0}.engineering-form{order:1}.engineering-results{order:2}.profile-toolbar{border-radius:10px}.profile-tab{flex-basis:78px}.technical-drawing{height:220px}}

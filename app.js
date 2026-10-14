@@ -19,7 +19,7 @@ const CATALOG_SEED = [
 {code:"PM-22-36-15.00",name:"Press-fit metric bushing · ID 15 / OD 22 / L 36 mm",brand:"Carr Lane",price:"",currency:"USD",image:"https://www.carrlane.com/Portals/0/ProductModels/0a2ba963-c5e3-4970-aa64-2f16d88cefed.png?ver=GZPYupeJbtlIzKMXQucMDA%3D%3D",url:"https://www.carrlane.com/",verifiedPrice:false},
 {code:"PM-26-16-18.00",name:"Press-fit metric bushing · ID 18 / OD 26 / L 16 mm",brand:"Carr Lane",price:"",currency:"USD",image:"https://www.carrlane.com/Portals/0/ProductModels/0a2ba963-c5e3-4970-aa64-2f16d88cefed.png?ver=GZPYupeJbtlIzKMXQucMDA%3D%3D",url:"https://www.carrlane.com/",verifiedPrice:false},
 {code:"PM-26-28-18.00",name:"Press-fit metric bushing · ID 18 / OD 26 / L 28 mm",brand:"Carr Lane",price:"",currency:"USD",image:"https://www.carrlane.com/Portals/0/ProductModels/0a2ba963-c5e3-4970-aa64-2f16d88cefed.png?ver=GZPYupeJbtlIzKMXQucMDA%3D%3D",url:"https://www.carrlane.com/",verifiedPrice:false},
-{code:"FESTO-CATALOG",name:"Festo resmi katalog bağlantısı · ürün kodu ile arama",brand:"Festo",price:"",currency:"EUR",image:"assets/festo-catalog.svg",url:"https://www.festo.com/",verifiedPrice:false}
+{code:"QS-1/8-8",name:"Festo push-in fitting · ürün no. 153004 · 8 mm hortum / R1/8 bağlantı",brand:"Festo",price:"",currency:"EUR",image:"assets/festo-catalog.svg",url:"https://ftp.festo.com/Public/PNEUMATIC/SOFTWARE_SERVICE/DataSheet/TR_TR/153004.pdf",verifiedPrice:false}
 ];
 
 const META = {

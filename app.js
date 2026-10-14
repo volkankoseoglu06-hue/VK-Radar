@@ -1,117 +1,55 @@
-const $ = (id) => document.getElementById(id);
-const storageKey = "vkAnalizCleanData";
-const titles = {
-  standards: { eyebrow: "PARÇA ARAŞTIRMA", title: "Standart Parça Kataloğu", description: "Standart numarasını veya parça adını ara. Arama, seçtiğin üretici sitesinde açılır." },
-  materials: { eyebrow: "MALZEME YÖNETİMİ", title: "Malzeme Fiyatları", description: "Ham malzeme fiyatlarını USD/kg birimiyle kaydet. Kayıtlar bu tarayıcıda saklanır." },
-  weight: { eyebrow: "TEKNİK HESAPLAMA", title: "Ağırlık Hesaplama", description: "Dikdörtgen prizma, silindir veya plaka için teorik ağırlık hesabı yap." },
-  bom: { eyebrow: "PARÇA LİSTESİ", title: "BOM Analizi", description: "Excel dosyanı seçerek içeriğini önizle. Bu ilk sürümde dosya sunucuya yüklenmez." }
+const $ = id => document.getElementById(id);
+const STORE = "vkAnalizDataV2";
+const SEED = [
+ {name:"AL 6061",density:2.70,price:7.00},{name:"AL 5083",density:2.70,price:6.50},
+ {name:"AL 7050",density:2.70,price:14.00},{name:"ST37 / ST52",density:7.80,price:2.00},
+ {name:"TOOLOX 33",density:7.80,price:9.00},{name:"TOOLOX 44",density:7.70,price:13.00},
+ {name:"4140 ÇELİK",density:7.80,price:3.00},{name:"17-4PH",density:7.80,price:11.00},
+ {name:"15-5PH",density:7.80,price:31.00},{name:"DELRIN",density:1.42,price:9.00}
+];
+const META = {
+ standards:{eyebrow:"PARÇA ARAŞTIRMA",title:"Standart Parça Kataloğu",description:"Parça numarasını veya kodunu yaz. Ürün bilgisi ve görseli ekleyebilir, resmi üretici kaynaklarında arama yapabilirsin."},
+ materials:{eyebrow:"MALZEME YÖNETİMİ",title:"Ham Malzeme Fiyatları",description:"Yoğunluk ve USD/kg fiyatlarını bir kez kaydet; istediğin zaman düzenle."},
+ weight:{eyebrow:"TEKNİK HESAPLAMA",title:"Ağırlık ve Maliyet Hesaplama",description:"Geometri ve malzeme seçtikçe teknik çizim önizlemesi ve hesaplama sonucu güncellenir."},
+ bom:{eyebrow:"PARÇA LİSTESİ",title:"BOM Analizi",description:"CSV/TXT parça listeni önizle. XLSX için sonraki aşamada Excel ayrıştırma desteği eklenecek."}
 };
-let currentView = "home";
-let records = loadRecords();
-
-function loadRecords() {
-  try { return JSON.parse(localStorage.getItem(storageKey) || '{"materials":[],"recent":[]}'); }
-  catch { return { materials: [], recent: [] }; }
+let data = load();
+function load(){try{const d=JSON.parse(localStorage.getItem(STORE)||"{}"); if(!Array.isArray(d.materials)||!d.materials.length)d.materials=SEED.map((m,i)=>({...m,id:i+1})); if(!Array.isArray(d.products))d.products=[];if(!Array.isArray(d.recent))d.recent=[];return d;}catch{return {materials:SEED.map((m,i)=>({...m,id:i+1})),products:[],recent:[]};}}
+function persist(){localStorage.setItem(STORE,JSON.stringify(data));}
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function fmt(v,n=3){return Number(v).toLocaleString("tr-TR",{maximumFractionDigits:n});}
+function recent(label,view){data.recent=[{label,view,date:new Date().toLocaleDateString("tr-TR")},...data.recent.filter(x=>x.label!==label)].slice(0,5);persist();renderRecent();}
+function renderRecent(){const el=$("recentList");$("recentCount").textContent=data.recent.length+" kayıt";if(!data.recent.length){el.className="recent-empty";el.innerHTML='<span class="empty-icon">↗</span><span><strong>Henüz kayıt yok</strong><small>Çalışmaların burada listelenecek.</small></span>';return;}el.className="recent-list";el.innerHTML=data.recent.map(x=>'<button class="recent-row" data-recent="'+esc(x.view)+'"><span class="empty-icon">↗</span><span><strong>'+esc(x.label)+'</strong><small>'+esc(x.date)+'</small></span><b>→</b></button>').join("");el.querySelectorAll("[data-recent]").forEach(b=>b.onclick=()=>openView(b.dataset.recent));}
+function openView(view){$("home").classList.add("hidden");$("workspace").classList.remove("hidden");const m=META[view];$("viewEyebrow").textContent=m.eyebrow;$("viewTitle").textContent=m.title;$("viewDescription").textContent=m.description;({standards:renderStandards,materials:renderMaterials,weight:renderWeight,bom:renderBom})[view]($("viewContent"));window.scrollTo({top:0,behavior:"smooth"});}
+function home(){$("workspace").classList.add("hidden");$("home").classList.remove("hidden");window.scrollTo({top:0,behavior:"smooth"});}
+document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>openView(b.dataset.view));$("backHome").onclick=home;
+function renderStandards(root){
+ root.innerHTML='<div class="notice"><strong>Ürün arama hakkında:</strong> Carr Lane, Festo ve diğer üretici sitelerinin verisini otomatik okumak için resmi API veya sunucu bağlantısı gerekir. Bu sayfa ürün kodunu ve kayıtlarını yönetir; kaynakta arama butonu üreticiye özel arama açar. Bulunmayan kodlar burada kayıtlı ürünlerle karşılaştırılır, sahte fiyat gösterilmez.</div><div class="standard-search"><form id="productSearch" class="simple-form"><div class="field"><label for="productCode">Ürün kodu / standart numarası</label><input id="productCode" placeholder="Örn. Carr Lane CL-..." required></div><div class="field"><label for="productBrand">Üretici</label><select id="productBrand"><option value="Carr Lane">Carr Lane</option><option value="Festo">Festo</option><option value="MISUMI">MISUMI</option><option value="McMaster-Carr">McMaster-Carr</option><option value="Diğer">Diğer</option></select></div><div class="form-actions"><button class="primary-button" type="submit">Kodu ara</button><button class="secondary-button" type="button" id="newProduct">Ürün kaydet</button></div></form><div id="productMatch"></div></div><div id="productEditor"></div><div class="table-wrap" id="productTable"></div>';
+ $("productSearch").onsubmit=e=>{e.preventDefault();const q=$("productCode").value.trim(),brand=$("productBrand").value;const exact=data.products.find(p=>p.code.toLowerCase()===q.toLowerCase());if(exact){$("productMatch").innerHTML=productCard(exact,"Kayıtlı ürün bulundu");}else{const similar=data.products.filter(p=>p.code.toLowerCase().includes(q.toLowerCase())||q.toLowerCase().includes(p.code.toLowerCase())||p.name.toLowerCase().includes(q.toLowerCase())).slice(0,3);$("productMatch").innerHTML=similar.length?'<div class="notice"><strong>Bu kod bulunamadı. Bunlardan birini mi arıyorsun?</strong>'+similar.map(p=>productCard(p,"Benzer kayıt")).join("")+'</div>':'<div class="notice"><strong>Bu kod kayıtlı katalogda bulunamadı.</strong><br>Üretici sitesinde arama açabilir veya ürünün fotoğrafını, bağlantısını ve fiyatını buraya ekleyebilirsin.</div>';const domain=({"Carr Lane":"carrlane.com","Festo":"festo.com","MISUMI":"misumi-ec.com","McMaster-Carr":"mcmaster.com"})[brand];const url="https://www.google.com/search?q="+encodeURIComponent((domain?"site:"+domain+" ":"")+q);$("productMatch").insertAdjacentHTML("beforeend",'<div class="form-actions"><button class="secondary-button" id="officialSearch">Üretici sitesinde ara ↗</button></div>');$("officialSearch").onclick=()=>window.open(url,"_blank","noopener,noreferrer");recent("Ürün kodu araması: "+q,"standards");}};
+ $("newProduct").onclick=()=>productEditor(root,{code:$("productCode").value.trim(),brand:$("productBrand").value});
+ renderProductTable();
 }
-function saveRecords() { localStorage.setItem(storageKey, JSON.stringify(records)); }
-function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+function productCard(p,label){return '<div class="product-card">'+(p.image?'<img class="product-photo" src="'+esc(p.image)+'" alt="'+esc(p.name)+'" onerror="this.style.display=\'none\'">':'<div class="product-photo-placeholder">Ürün görseli</div>')+'<div class="product-card-info"><small>'+esc(label)+' · '+esc(p.brand)+'</small><strong>'+esc(p.name||p.code)+'</strong><span>Kod: '+esc(p.code)+'</span><span>'+(p.price!==""&&p.price!=null?esc(p.currency||"USD")+" "+fmt(p.price,2):"Fiyat girilmedi")+'</span>'+(p.url?'<a href="'+esc(p.url)+'" target="_blank" rel="noopener noreferrer">Üretici sayfası ↗</a>':"")+'</div></div>';}
+function productEditor(root,p={}){const box=$("productEditor");box.innerHTML='<form id="productForm" class="editor-panel"><h3>Ürün bilgisi</h3><div class="simple-form"><div class="field"><label>Ürün kodu</label><input id="pCode" required value="'+esc(p.code||"")+'"></div><div class="field"><label>Ürün adı / açıklama</label><input id="pName" placeholder="Ürün adı" value="'+esc(p.name||"")+'"></div><div class="field"><label>Üretici</label><input id="pBrand" value="'+esc(p.brand||"")+'"></div><div class="field"><label>Fiyat</label><input id="pPrice" type="number" min="0" step="0.01" value="'+esc(p.price??"")+'" placeholder="Fiyat"></div><div class="field"><label>Para birimi</label><select id="pCurrency">'+["USD","EUR","TRY"].map(c=>'<option '+(c===(p.currency||"USD")?"selected":"")+'>'+c+'</option>').join("")+'</select></div><div class="field"><label>Ürün görseli bağlantısı</label><input id="pImage" type="url" placeholder="https://..." value="'+esc(p.image||"")+'"></div><div class="field"><label>Üretici ürün sayfası</label><input id="pUrl" type="url" placeholder="https://..." value="'+esc(p.url||"")+'"></div></div><div class="form-actions"><button class="primary-button" type="submit">Ürünü kaydet</button><button class="secondary-button" type="button" id="cancelProduct">İptal</button></div></form>';
+ $("productForm").onsubmit=e=>{e.preventDefault();const item={id:p.id||Date.now(),code:$("pCode").value.trim(),name:$("pName").value.trim(),brand:$("pBrand").value.trim(),price:$("pPrice").value===""?"":Number($("pPrice").value),currency:$("pCurrency").value,image:$("pImage").value.trim(),url:$("pUrl").value.trim()};data.products=data.products.filter(x=>x.id!==item.id);data.products.unshift(item);persist();box.innerHTML="";renderProductTable();$("productMatch").innerHTML=productCard(item,"Kaydedilen ürün");recent("Ürün: "+item.code,"standards");};$("cancelProduct").onclick=()=>box.innerHTML="";
 }
-function addRecent(label, view) {
-  records.recent = [{ label, view, date: new Date().toLocaleDateString("tr-TR") }, ...records.recent.filter(x => x.label !== label)].slice(0, 5);
-  saveRecords(); renderRecent();
+function renderProductTable(){const root=$("productTable");if(!root)return;if(!data.products.length){root.innerHTML='<div class="empty-table">Henüz standart ürün kaydı yok. Kod, ürün görseli, kaynak ve fiyat ekleyebilirsin.</div>';return;}root.innerHTML='<h3>Kayıtlı ürünler</h3>'+data.products.map(p=>productCard(p,"Kayıtlı ürün")+'<div class="form-actions compact-actions"><button class="secondary-button" data-edit-product="'+p.id+'">Düzenle</button><button class="secondary-button" data-delete-product="'+p.id+'">Sil</button></div>').join("");root.querySelectorAll("[data-edit-product]").forEach(b=>b.onclick=()=>productEditor($("viewContent"),data.products.find(p=>p.id===Number(b.dataset.editProduct))));root.querySelectorAll("[data-delete-product]").forEach(b=>b.onclick=()=>{data.products=data.products.filter(p=>p.id!==Number(b.dataset.deleteProduct));persist();renderProductTable();});}
+function renderMaterials(root){
+ root.innerHTML='<div class="notice">Fiyatlar USD/kg, yoğunluk g/cm³ olarak tutulur. Aşağıdaki başlangıç değerleri verdiğin listeye göre yüklendi. Her satırdan düzenleyebilir, fiyatı istediğin zaman değiştirebilirsin.</div><form id="materialForm" class="simple-form"><div class="field"><label for="mName">Malzeme adı</label><input id="mName" placeholder="Malzeme adı" required></div><div class="field"><label for="mDensity">Yoğunluk (g/cm³)</label><input id="mDensity" type="number" min="0.01" step="0.01" required></div><div class="field"><label for="mPrice">Birim fiyat (USD/kg)</label><input id="mPrice" type="number" min="0" step="0.01" required></div><div class="form-actions"><button class="primary-button" type="submit">Malzeme ekle</button></div></form><div class="table-wrap" id="materialsTable"></div>';
+ $("materialForm").onsubmit=e=>{e.preventDefault();data.materials.push({id:Date.now(),name:$("mName").value.trim(),density:Number($("mDensity").value),price:Number($("mPrice").value)});persist();renderMaterialsTable();e.target.reset();recent("Malzeme eklendi","materials");};
+ renderMaterialsTable();
 }
-function renderRecent() {
-  $("recentCount").textContent = records.recent.length + " kayıt";
-  const root = $("recentList");
-  if (!records.recent.length) {
-    root.className = "recent-empty";
-    root.innerHTML = '<span class="empty-icon">↗</span><span><strong>Henüz kayıt yok</strong><small>Çalışmaların burada listelenecek.</small></span>';
-    return;
-  }
-  root.className = "recent-list";
-  root.innerHTML = records.recent.map(r => '<button class="recent-row" data-recent-view="'+escapeHtml(r.view)+'"><span class="empty-icon">↗</span><span><strong>'+escapeHtml(r.label)+'</strong><small>'+escapeHtml(r.date)+'</small></span><b>→</b></button>').join("");
-  root.querySelectorAll("[data-recent-view]").forEach(b => b.addEventListener("click", () => openView(b.dataset.recentView)));
+function renderMaterialsTable(){const root=$("materialsTable");if(!root)return;root.innerHTML='<table><thead><tr><th>Malzeme</th><th>Yoğunluk (g/cm³)</th><th>Fiyat (USD/kg)</th><th>İşlem</th></tr></thead><tbody>'+data.materials.map(m=>'<tr><td>'+esc(m.name)+'</td><td><input class="inline-edit" aria-label="Yoğunluk" type="number" min="0.01" step="0.01" data-density="'+m.id+'" value="'+m.density+'"></td><td><input class="inline-edit" aria-label="Fiyat USD/kg" type="number" min="0" step="0.01" data-price="'+m.id+'" value="'+m.price+'"></td><td><button class="secondary-button" data-save-material="'+m.id+'">Kaydet</button> <button class="secondary-button" data-delete-material="'+m.id+'">Sil</button></td></tr>').join("")+'</tbody></table>';
+ root.querySelectorAll("[data-save-material]").forEach(b=>b.onclick=()=>{const m=data.materials.find(x=>x.id===Number(b.dataset.saveMaterial));m.density=Number(root.querySelector('[data-density="'+m.id+'"]').value);m.price=Number(root.querySelector('[data-price="'+m.id+'"]').value);persist();b.textContent="Kaydedildi ✓";setTimeout(()=>{if(b.isConnected)b.textContent="Kaydet";},1200);});
+ root.querySelectorAll("[data-delete-material]").forEach(b=>b.onclick=()=>{data.materials=data.materials.filter(m=>m.id!==Number(b.dataset.deleteMaterial));persist();renderMaterialsTable();});
 }
-function openView(view) {
-  currentView = view;
-  $("home").classList.add("hidden");
-  $("workspace").classList.remove("hidden");
-  const meta = titles[view];
-  $("viewEyebrow").textContent = meta.eyebrow;
-  $("viewTitle").textContent = meta.title;
-  $("viewDescription").textContent = meta.description;
-  const root = $("viewContent");
-  if (view === "standards") renderStandards(root);
-  if (view === "materials") renderMaterials(root);
-  if (view === "weight") renderWeight(root);
-  if (view === "bom") renderBom(root);
-  window.scrollTo({ top: 0, behavior: "smooth" });
+function renderWeight(root){
+ root.innerHTML='<div class="weight-layout"><aside class="drawing-panel"><div class="drawing-head"><span>GEOMETRİ ÖNİZLEMESİ</span><span class="drawing-dot"></span></div><div id="shapeDrawing" class="shape-drawing"></div><div class="drawing-caption" id="drawingCaption">Dikdörtgen blok</div></aside><section class="calc-panel"><form id="weightForm"><div class="field"><label for="shape">Parça geometrisi</label><select id="shape"><option value="box">Dikdörtgen blok</option><option value="cylinder">Silindir</option><option value="plate">Plaka</option></select></div><div class="field"><label for="materialSelect">Malzeme</label><select id="materialSelect">'+data.materials.map(m=>'<option value="'+m.id+'">'+esc(m.name)+'</option>').join("")+'</select></div><div class="field"><label for="density">Yoğunluk (g/cm³)</label><input id="density" type="number" step="0.01" min="0.01" required></div><div class="dimensions-grid"><div class="field"><label for="length">Uzunluk (mm)</label><input id="length" type="number" min="0.01" step="any" value="100" required></div><div class="field" id="widthField"><label for="width">Genişlik (mm)</label><input id="width" type="number" min="0.01" step="any" value="50" required></div><div class="field" id="heightField"><label for="height">Kalınlık / yükseklik (mm)</label><input id="height" type="number" min="0.01" step="any" value="10" required></div><div class="field hidden" id="diameterField"><label for="diameter">Çap (mm)</label><input id="diameter" type="number" min="0.01" step="any" value="50"></div></div><div class="field"><label for="quantity">Adet</label><input id="quantity" type="number" min="1" step="1" value="1" required></div><button class="primary-button full-button" type="submit">Ağırlık ve maliyeti hesapla</button></form></section></div><div id="weightResult"></div>';
+ const material=()=>data.materials.find(m=>m.id===Number($("materialSelect").value))||data.materials[0];
+ function fillMaterial(){const m=material();if(m)$("density").value=m.density;draw();}
+ function draw(){const shape=$("shape").value;const svg={box:'<svg viewBox="0 0 300 190" aria-label="Dikdörtgen blok çizimi"><path d="M55 63 151 24 246 65 149 106Z" fill="#dceaf3" stroke="#4e83a7" stroke-width="1.6"/><path d="M55 63 149 106V169L55 125Z" fill="#b5d0e2" stroke="#4e83a7" stroke-width="1.6"/><path d="M149 106 246 65V127L149 169Z" fill="#8eb4cf" stroke="#4e83a7" stroke-width="1.6"/><path d="M55 143V151M149 177V185M55 150H149M164 110 252 73M252 73V65" stroke="#718da2" stroke-width="1.2" fill="none"/><text x="99" y="164" font-size="10" fill="#385e78">L</text><text x="204" y="150" font-size="10" fill="#385e78">H</text></svg>',cylinder:'<svg viewBox="0 0 300 190" aria-label="Silindir çizimi"><path d="M80 48C80 25 222 25 222 48V137C222 160 80 160 80 137Z" fill="#b8d4e5" stroke="#4e83a7" stroke-width="1.6"/><ellipse cx="151" cy="48" rx="71" ry="23" fill="#e3eff6" stroke="#4e83a7" stroke-width="1.6"/><path d="M80 137C80 160 222 160 222 137" fill="none" stroke="#4e83a7" stroke-width="1.6"/><path d="M151 48H222M151 48V25" stroke="#718da2" stroke-dasharray="3 3"/><text x="185" y="40" font-size="10" fill="#385e78">Ø</text><text x="233" y="95" font-size="10" fill="#385e78">L</text></svg>',plate:'<svg viewBox="0 0 300 190" aria-label="Plaka çizimi"><path d="M45 75 155 32 255 70 145 113Z" fill="#e3eff6" stroke="#4e83a7" stroke-width="1.6"/><path d="M45 75 145 113V130L45 92Z" fill="#b5d0e2" stroke="#4e83a7" stroke-width="1.6"/><path d="M145 113 255 70V87L145 130Z" fill="#8eb4cf" stroke="#4e83a7" stroke-width="1.6"/><path d="M45 103V112M145 139V147M45 111H145" stroke="#718da2" stroke-width="1.2"/><text x="87" y="129" font-size="10" fill="#385e78">L</text><text x="202" y="111" font-size="10" fill="#385e78">K</text></svg>'};$("shapeDrawing").innerHTML=svg[shape];$("drawingCaption").textContent=({box:"Dikdörtgen blok",cylinder:"Silindir",plate:"Plaka"})[shape];$("widthField").classList.toggle("hidden",shape==="cylinder");$("diameterField").classList.toggle("hidden",shape!=="cylinder");$("heightField").classList.toggle("hidden",shape==="cylinder");}
+ $("materialSelect").onchange=fillMaterial;$("shape").onchange=draw;fillMaterial();
+ $("weightForm").onsubmit=e=>{e.preventDefault();const m=material(),l=Number($("length").value),w=Number($("width").value),h=Number($("height").value),d=Number($("diameter").value),density=Number($("density").value),qty=Number($("quantity").value);let volumeMm3;if($("shape").value==="cylinder")volumeMm3=Math.PI*Math.pow(d/2,2)*l;else volumeMm3=l*w*h;const oneKg=volumeMm3/1e6*density;const total=oneKg*qty;const cost=total*m.price;$("weightResult").innerHTML='<div class="result-grid"><div class="result-card"><small>BİRİM AĞIRLIK</small><strong>'+fmt(oneKg,4)+' kg</strong></div><div class="result-card"><small>TOPLAM AĞIRLIK · '+qty+' ADET</small><strong>'+fmt(total,4)+' kg</strong></div><div class="result-card"><small>TAHMİNİ HAM MALZEME MALİYETİ</small><strong>$'+fmt(cost,2)+'</strong><small>$'+fmt(m.price,2)+' / kg · '+esc(m.name)+'</small></div></div><p class="small-note">Teorik katı hacim hesabıdır; delikler, cep boşaltmaları ve talaş/fire dahil değildir.</p>';recent("Ağırlık: "+m.name+" · "+fmt(total,3)+" kg","weight");};
 }
-function goHome() {
-  currentView = "home";
-  $("workspace").classList.add("hidden");
-  $("home").classList.remove("hidden");
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-document.querySelectorAll("[data-view]").forEach(button => button.addEventListener("click", () => openView(button.dataset.view)));
-$("backHome").addEventListener("click", goHome);
-
-function renderStandards(root) {
-  root.innerHTML = '<div class="notice">Bu araç ürün fiyatlarını otomatik olarak içeri aktardığını iddia etmez. Arama, ilgili tedarikçi sitesinde yeni sekmede açılır; bulduğun ürün bilgisini ayrıca kaydedebilirsin.</div><form id="standardForm" class="simple-form"><div class="field"><label for="standardQuery">Standart numarası veya parça adı</label><input id="standardQuery" placeholder="Örn. NAS, ISO 4762, MS21042" required></div><div class="field"><label for="standardSupplier">Arama kaynağı</label><select id="standardSupplier"><option value="carrlane.com">Carr Lane</option><option value="mcmaster.com">McMaster-Carr</option><option value="misumi-ec.com">MISUMI</option><option value="google">Genel web araması</option></select></div><div class="form-actions"><button class="primary-button" type="submit">Kaynakta ara ↗</button><button class="secondary-button" id="saveStandard" type="button">Araştırma kaydı ekle</button></div></form><div id="standardFeedback"></div>';
-  $("standardForm").addEventListener("submit", e => {
-    e.preventDefault();
-    const q = $("standardQuery").value.trim(), source = $("standardSupplier").value;
-    const url = source === "google" ? "https://www.google.com/search?q=" + encodeURIComponent(q + " aviation standard part") : "https://www.google.com/search?q=" + encodeURIComponent("site:" + source + " " + q);
-    window.open(url, "_blank", "noopener,noreferrer");
-    addRecent("Parça araması: " + q, "standards");
-  });
-  $("saveStandard").addEventListener("click", () => {
-    const q = $("standardQuery").value.trim();
-    if (!q) { $("standardQuery").focus(); return; }
-    addRecent("Parça araştırması: " + q, "standards");
-    $("standardFeedback").innerHTML = '<p class="notice">Araştırma son çalışmalar listesine eklendi.</p>';
-  });
-}
-function renderMaterials(root) {
-  root.innerHTML = '<form id="materialForm" class="simple-form"><div class="field"><label for="materialName">Malzeme tanımı</label><input id="materialName" placeholder="Örn. Alüminyum 7075-T6" required></div><div class="field"><label for="materialPrice">Fiyat (USD/kg)</label><input id="materialPrice" type="number" min="0" step="0.0001" placeholder="0.00" required></div><div class="field"><label for="materialSupplier">Tedarikçi</label><input id="materialSupplier" placeholder="Firma adı"></div><div class="field"><label for="materialSource">Kaynak bağlantısı</label><input id="materialSource" type="url" placeholder="https://..."></div><div class="form-actions"><button class="primary-button" type="submit">Fiyatı kaydet</button></div></form><div class="table-wrap" id="materialsTable"></div>';
-  renderMaterialsTable();
-  $("materialForm").addEventListener("submit", e => {
-    e.preventDefault();
-    records.materials.unshift({ id: Date.now(), name: $("materialName").value.trim(), price: Number($("materialPrice").value), supplier: $("materialSupplier").value.trim(), source: $("materialSource").value.trim(), date: new Date().toLocaleDateString("tr-TR") });
-    saveRecords(); renderMaterialsTable(); addRecent("Malzeme fiyatı: " + records.materials[0].name, "materials"); e.target.reset();
-  });
-}
-function renderMaterialsTable() {
-  const root = $("materialsTable");
-  if (!root) return;
-  if (!records.materials.length) { root.innerHTML = '<div class="empty-table">Henüz malzeme fiyatı kaydedilmedi.</div>'; return; }
-  root.innerHTML = '<table><thead><tr><th>Malzeme</th><th>Fiyat</th><th>Tedarikçi</th><th>Tarih</th><th></th></tr></thead><tbody>'+records.materials.map(m => '<tr><td>'+escapeHtml(m.name)+'</td><td>$'+Number(m.price).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:4})+' / kg</td><td>'+escapeHtml(m.supplier || "—")+'</td><td>'+escapeHtml(m.date)+'</td><td><button class="secondary-button" data-delete-material="'+m.id+'">Sil</button> '+(m.source?'<a href="'+escapeHtml(m.source)+'" target="_blank" rel="noopener noreferrer">Kaynak ↗</a>':"")+'</td></tr>').join("")+'</tbody></table>';
-  root.querySelectorAll("[data-delete-material]").forEach(b => b.addEventListener("click", () => { records.materials = records.materials.filter(m => m.id !== Number(b.dataset.deleteMaterial)); saveRecords(); renderMaterialsTable(); }));
-}
-function renderWeight(root) {
-  root.innerHTML = '<div class="notice">Hesaplanan değer teoriktir. Malzeme yoğunluğu kg/m³ olarak girilir. Delikler, pahlar ve gerçek geometri ayrıca hesaba katılmaz.</div><form id="weightForm" class="simple-form"><div class="field"><label for="shape">Geometri</label><select id="shape"><option value="box">Dikdörtgen prizma / blok</option><option value="cylinder">Silindir</option><option value="plate">Plaka</option></select></div><div class="field"><label for="density">Yoğunluk (kg/m³)</label><input id="density" type="number" min="1" value="2810" required></div><div class="field"><label for="length">Uzunluk (mm)</label><input id="length" type="number" min="0.01" value="100" required></div><div class="field" id="widthField"><label for="width">Genişlik (mm)</label><input id="width" type="number" min="0.01" value="50" required></div><div class="field" id="heightField"><label for="height">Yükseklik / kalınlık (mm)</label><input id="height" type="number" min="0.01" value="10" required></div><div class="field hidden" id="diameterField"><label for="diameter">Çap (mm)</label><input id="diameter" type="number" min="0.01" value="50"></div><div class="form-actions"><button class="primary-button" type="submit">Ağırlığı hesapla</button></div></form><div id="weightResult"></div>';
-  $("shape").addEventListener("change", () => { const cylinder = $("shape").value === "cylinder"; $("widthField").classList.toggle("hidden", cylinder); $("diameterField").classList.toggle("hidden", !cylinder); });
-  $("weightForm").addEventListener("submit", e => {
-    e.preventDefault();
-    const l = Number($("length").value)/1000, d = Number($("density").value);
-    const volume = $("shape").value === "cylinder" ? Math.PI*Math.pow(Number($("diameter").value)/2000,2)*l : l*(Number($("width").value)/1000)*(Number($("height").value)/1000);
-    const kg = volume*d;
-    $("weightResult").innerHTML = '<div class="result-card"><small>TEORİK AĞIRLIK</small><strong>'+kg.toLocaleString("tr-TR",{maximumFractionDigits:4})+' kg</strong><small>Hacim: '+(volume*1e9).toLocaleString("tr-TR",{maximumFractionDigits:2})+' mm³</small></div>';
-    addRecent("Ağırlık hesabı: "+kg.toLocaleString("tr-TR",{maximumFractionDigits:3})+" kg", "weight");
-  });
-}
-function renderBom(root) {
-  root.innerHTML = '<div class="notice">Dosya yalnızca tarayıcında okunur; sunucuya gönderilmez. CSV dosyaları doğrudan önizlenebilir. XLSX dosyaları için bu sürümde Excel ayrıştırma kütüphanesi eklenmediğinden CSV olarak dışa aktarman gerekebilir.</div><div class="field"><label for="bomFile">BOM dosyası seç (CSV veya TXT)</label><input id="bomFile" type="file" accept=".csv,.txt"></div><div id="bomPreview" class="table-wrap"></div>';
-  $("bomFile").addEventListener("change", async e => {
-    const file = e.target.files[0]; if (!file) return;
-    const text = await file.text();
-    const lines = text.split(/\r?\n/).filter(x => x.trim()).slice(0,101);
-    if (!lines.length) return;
-    const delimiter = lines[0].includes(";") ? ";" : lines[0].includes("\t") ? "\t" : ",";
-    const rows = lines.map(line => line.split(delimiter));
-    $("bomPreview").innerHTML = '<p class="notice">'+escapeHtml(file.name)+' · '+Math.max(0,rows.length-1)+' satır önizleme (en fazla 100 satır)</p><table><tbody>'+rows.map((row,i) => '<tr>'+row.slice(0,12).map(cell => i===0?'<th>'+escapeHtml(cell)+'</th>':'<td>'+escapeHtml(cell)+'</td>').join("")+'</tr>').join("")+'</tbody></table>';
-    addRecent("BOM önizleme: "+file.name, "bom");
-  });
-}
+function renderBom(root){root.innerHTML='<div class="notice">Dosya bu tarayıcıda okunur, sunucuya yüklenmez. Bu sürüm CSV/TXT önizlemesi sağlar; XLSX dosyaları için Excel ayrıştırma desteği henüz eklenmedi.</div><div class="field"><label for="bomFile">CSV veya TXT dosyası seç</label><input id="bomFile" type="file" accept=".csv,.txt"></div><div id="bomPreview" class="table-wrap"></div>';$("bomFile").onchange=async e=>{const f=e.target.files[0];if(!f)return;const lines=(await f.text()).split(/\r?\n/).filter(Boolean).slice(0,101);const delim=lines[0].includes(";")?";":lines[0].includes("\t")?"\t":",";const rows=lines.map(x=>x.split(delim));$("bomPreview").innerHTML='<p class="notice">'+esc(f.name)+' · '+Math.max(0,rows.length-1)+' satır gösteriliyor</p><table><tbody>'+rows.map((r,i)=>'<tr>'+r.slice(0,12).map(c=>i===0?'<th>'+esc(c)+'</th>':'<td>'+esc(c)+'</td>').join("")+'</tr>').join("")+'</tbody></table>';recent("BOM: "+f.name,"bom");};}
 renderRecent();
